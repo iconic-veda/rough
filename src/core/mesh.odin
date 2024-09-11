@@ -1,30 +1,27 @@
 package core
 
 import "core:log"
+import "core:mem"
 
 import glm "core:math/linalg/glsl"
 import gl "vendor:OpenGL"
 
 Vertex :: struct {
-	position: glm.vec3,
-	normal:   glm.vec3,
-	color:    glm.vec3,
-	// tex_coords: glm.vec2,
-}
-
-Texture :: struct {
-	id:   uint,
-	type: string,
+	position:   glm.vec3,
+	normal:     glm.vec3,
+	// color:      glm.vec3,
+	tex_coords: glm.vec2,
 }
 
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	// textures:         []Texture,
+	textures:         []Texture,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
 	_binding_index:   u32,
+	_allocator:       mem.Allocator,
 }
 
 mesh_new :: proc {
@@ -36,7 +33,7 @@ mesh_free :: proc(m: ^Mesh) {
 	gl.DeleteVertexArrays(1, &m._vao)
 	gl.DeleteBuffers(1, &m._vbo)
 	gl.DeleteBuffers(1, &m._ebo)
-	free(m)
+	free(m, m._allocator) // Is it ok ?
 }
 
 mesh_new_from_obj_file :: proc(obj_path: string) -> Mesh {
@@ -46,19 +43,34 @@ mesh_new_from_obj_file :: proc(obj_path: string) -> Mesh {
 mesh_new_explicit :: proc(
 	vertices: []Vertex,
 	indices: []u32,
-	// textures: []Texture,
+	textures: []Texture,
 	allocator := context.allocator,
 ) -> ^Mesh {
 	m := new(Mesh, allocator)
 	m.vertices = vertices
 	m.indices = indices
-	// m.textures = textures
+	m.textures = textures
+	m._allocator = allocator
 	_mesh_setup_buffers(m)
 	return m
 }
 
 
 mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
+	for i: u32 = 0; i < u32(len(m.textures)); i += 1 {
+		gl.ActiveTexture(gl.TEXTURE0 + i)
+		name: cstring
+		switch m.textures[i].type {
+		case TextureType.Diffuse:
+			name = "texture_diffuse"
+		case TextureType.Specular:
+			unimplemented("Not yet implemented")
+		}
+		shader_set_uniform(shader, name, i32(i))
+		gl.BindTexture(gl.TEXTURE_2D, m.textures[i].id)
+	}
+	gl.ActiveTexture(gl.TEXTURE0)
+
 	gl.BindVertexArray(m._vao)
 	defer gl.BindVertexArray(0)
 	gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
@@ -96,7 +108,14 @@ _mesh_setup_buffers :: proc(m: ^Mesh) {
 	gl.VertexArrayAttribBinding(m._vao, 1, m._binding_index)
 
 	gl.EnableVertexArrayAttrib(m._vao, 2)
-	gl.VertexArrayAttribFormat(m._vao, 2, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, color)))
+	gl.VertexArrayAttribFormat(
+		m._vao,
+		2,
+		2,
+		gl.FLOAT,
+		gl.FALSE,
+		u32(offset_of(Vertex, tex_coords)),
+	)
 	gl.VertexArrayAttribBinding(m._vao, 2, m._binding_index)
 
 	gl.BindVertexArray(0)
