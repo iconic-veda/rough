@@ -1,20 +1,18 @@
-#version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
+#version 460 core
+
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec3 aColor;
 
 out vec3 ourColor;
 
-uniform float k;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-float kk = 0.5;
-
-uniform mat3 rotation_mat;
-uniform mat3 camera_to_x_mat;
-uniform mat4 translation_mat;
-uniform mat4 perspective_mat;
-
-void main() {
-
-        gl_Position = perspective_mat * translation_mat * vec4(camera_to_x_mat * rotation_mat * aPos, 1);
-        ourColor    = aColor;
+void main()
+{
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    // gl_Position = vec4(aPos, 1.0);
+    ourColor = aColor;
 }

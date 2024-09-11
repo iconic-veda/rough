@@ -1,3 +1,13 @@
-freya
+*
 
-.zed/
+!Justfile
+!.gitignore
+!README.md
+
+!*.odin
+
+!core/
+!core/*.odin
+
+!shaders/
+!shaders/*.glsl
