@@ -13,7 +13,6 @@ ShaderProgram :: u32
 
 shader_new :: proc(vertex_source, fragment_source: string) -> ShaderProgram {
 	if program, ok := gl.load_shaders_source(vertex_source, fragment_source); ok {
-		log.info("Shader program id =", program)
 		return program
 	} else {
 		log.panic("Failed to load shader")

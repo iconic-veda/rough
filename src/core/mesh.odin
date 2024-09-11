@@ -32,6 +32,13 @@ mesh_new :: proc {
 	mesh_new_from_obj_file,
 }
 
+mesh_free :: proc(m: ^Mesh) {
+	gl.DeleteVertexArrays(1, &m._vao)
+	gl.DeleteBuffers(1, &m._vbo)
+	gl.DeleteBuffers(1, &m._ebo)
+	free(m)
+}
+
 mesh_new_from_obj_file :: proc(obj_path: string) -> Mesh {
 	unimplemented("Not yet defined how to import objects") // TODO
 }
