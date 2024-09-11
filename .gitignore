@@ -6,8 +6,10 @@
 
 !*.odin
 
-!core/
-!core/*.odin
+!src/
+!src/**
+!src/**/*.odin
+!src/*.odin
 
 !shaders/
 !shaders/*.glsl
