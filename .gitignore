@@ -13,3 +13,7 @@
 
 !shaders/
 !shaders/*.glsl
+
+!assets/
+!assets/*
+!assets/textures/.gitkeep
