@@ -1,25 +1,35 @@
-package freya
+package core
 
-import freya "main"
-import win "main/window"
+import "core"
+import win "core/window"
+import rndr "renderer"
 
+import "core:fmt"
 import "core:log"
 import "core:time"
 
 import glm "core:math/linalg/glsl"
-import gl "vendor:OpenGL"
+
+event_callback :: proc(ev: core.Event) {
+	switch e in ev {
+	case core.WindowResizeEvent:
+		{rndr.on_window_resize(e.width, e.height)}
+	}
+}
 
 main :: proc() {
 	logger := log.create_console_logger()
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
 
-	window := win.window_create(800, 600, "Freya Engine")
+	window := win.window_create(800, 600, "Freya Engine", event_callback)
+	defer win.window_destroy(&window)
+	rndr.initialize_context()
 
-	shader := freya.shader_new(#load("../shaders/vertex.glsl"), #load("../shaders/fragment.glsl"))
-	defer freya.shader_delete(shader)
+	shader := rndr.shader_new(#load("../shaders/vertex.glsl"), #load("../shaders/fragment.glsl"))
+	defer rndr.shader_delete(shader)
 
-	vertices: []freya.Vertex = {
+	vertices: []rndr.Vertex = {
 		{{-1, -1, -1}, {0.0, 0.0, 1.0}, {0.0, 0.0}},
 		{{+1, -1, -1}, {0.0, 0.0, 1.0}, {1.0, 0.0}},
 		{{-1, +1, -1}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
@@ -83,35 +93,34 @@ main :: proc() {
 		22,
 		23, // Face 6
 	}
-	textures: []freya.Texture = {
-		freya.texture_new("assets/textures/diamond_block.png", freya.TextureType.Diffuse),
-	}
-	quad := freya.mesh_new(vertices, indices, textures)
-	defer freya.mesh_free(quad)
+	textures: []rndr.Texture = {rndr.texture_new("assets/textures/diamond_block.png", .Diffuse)}
 
-	gl.Enable(gl.DEPTH_TEST)
+	quad := rndr.mesh_new(vertices, indices, textures)
+	defer rndr.mesh_free(quad)
+
+	rndr.enable_capabilities({.DEPTH_TEST, .STENCIL_TEST})
 
 	watch: time.Stopwatch
 	time.stopwatch_start(&watch)
 	for !win.window_should_close(&window) {
 		win.window_poll_events()
-		gl.ClearColor(0.28, 0.28, 0.28, 1.0)
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		rndr.clear_screen({0.28, 0.28, 0.28, 1.0})
 		{
+			// Update
 			raw_duration := time.stopwatch_duration(watch)
 			theta := f32(time.duration_seconds(raw_duration))
 
+			// Draw
 			model := glm.mat4Rotate({1.0, 1.0, 1.0}, f32(theta))
 			view: glm.mat4 = glm.mat4LookAt({0, 10, 0}, {0, 0, -1.0}, {0, 1, 0})
-			projection := glm.mat4Perspective(glm.radians(f32(45)), win.ASPECT_RATIO, 0.01, 1000.0)
+			projection := glm.mat4Perspective(glm.radians(f32(45)), 800 / 600, 0.01, 1000.0)
 
-			freya.shader_use(shader)
-			freya.shader_set_uniform(shader, "model", &model)
-			freya.shader_set_uniform(shader, "projection", &projection)
-			freya.shader_set_uniform(shader, "view", &view)
-			freya.mesh_draw(quad, shader)
+			rndr.shader_use(shader)
+			rndr.shader_set_uniform(shader, "model", &model)
+			rndr.shader_set_uniform(shader, "projection", &projection)
+			rndr.shader_set_uniform(shader, "view", &view)
+			rndr.mesh_draw(quad, shader)
 		}
 		win.window_swapbuffers(&window)
 	}
-	win.window_destroy(&window)
 }
