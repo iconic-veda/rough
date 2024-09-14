@@ -17,3 +17,5 @@
 !assets/
 !assets/*
 !assets/textures/.gitkeep
+
+!freya_kanban
