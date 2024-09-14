@@ -42,8 +42,6 @@ main :: proc() {
 		libgame.update(delta_time)
 
 		if ((now - last_frame) >= fps_limit) {
-			rndr.clear_screen({0.28, 0.28, 0.28, 1.0})
-
 			libgame.draw()
 
 			win.window_swapbuffers(&window)

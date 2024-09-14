@@ -16,8 +16,9 @@ initialize_context :: proc() {
 	gl.load_up_to(4, 6, glfw.gl_set_proc_address)
 }
 
+@(export)
 clear_screen :: proc(color: glm.vec4) {
-	gl.ClearColor(0.28, 0.28, 0.28, 1.0)
+	gl.ClearColor(color.r, color.g, color.b, color.a)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 

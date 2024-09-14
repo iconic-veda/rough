@@ -107,6 +107,8 @@ update :: proc(dt: f64) {
 
 @(export)
 draw :: proc() {
+	rndr.clear_screen({0.2, 0.2, 0.2, 1.0})
+
 	model := glm.mat4Rotate({1.0, 1.0, 1.0}, glm.radians(theta))
 	view: glm.mat4 = glm.mat4LookAt({0, 10, 0}, {0, 0, -1.0}, {0, 1, 0})
 	projection := glm.mat4Perspective(glm.radians(f32(45)), ASPECT_RATIO, 0.01, 1000.0)
