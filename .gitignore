@@ -6,10 +6,15 @@
 
 !*.odin
 
-!src/
-!src/**
-!src/**/*.odin
-!src/*.odin
+!freya/
+!freya/**
+!freya/**/*.odin
+!freya/*.odin
+
+!sandbox/
+!sandbox/**
+!sandbox/**/*.odin
+!sandbox/*.odin
 
 !shaders/
 !shaders/*.glsl
