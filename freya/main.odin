@@ -8,11 +8,20 @@ import rndr "renderer"
 
 import "core:log"
 
+SHOULD_RUN: bool = true
+
 event_callback :: proc(ev: core.Event) {
-	switch e in ev {
+	#partial switch e in ev {
 	case core.WindowResizeEvent:
 		{
 			rndr.on_window_resize(e.width, e.height)
+		}
+	case core.KeyPressEvent:
+		{
+			if e.code == core.KeyCode.Escape {
+			    SHOULD_RUN = false
+				return
+			}
 		}
 	}
 
@@ -32,22 +41,17 @@ main :: proc() {
 
 	libgame.initialize()
 
-	fps_limit: f64 = 1 / 60.0
-	last_frame, last_update: f64 = 0.0, 0.0
-	for !win.window_should_close(&window) {
+	last_frame: f64 = 0.0
+	for !win.window_should_close(&window) && SHOULD_RUN {
 		now := win.window_get_time()
-		delta_time := now - last_update
+		delta_time := now - last_frame
+		last_frame = now
 
 		win.window_poll_events()
 		libgame.update(delta_time)
+		libgame.draw()
 
-		if ((now - last_frame) >= fps_limit) {
-			libgame.draw()
-
-			win.window_swapbuffers(&window)
-			last_frame = now
-		}
-		last_update = now
+		win.window_swapbuffers(&window)
 	}
 	libgame.shutdown()
 }

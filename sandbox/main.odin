@@ -15,6 +15,7 @@ quad: ^rndr.Mesh
 shader: rndr.ShaderProgram
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
+theta: f32 = 0.0
 
 @(export)
 initialize :: proc() {
@@ -92,24 +93,21 @@ initialize :: proc() {
 
 @(export)
 shutdown :: proc() {
-	log.info("Goodbye from lib\n")
-
 	rndr.mesh_free(quad)
 	rndr.shader_delete(shader)
+	// log.info("Goodbye from lib")
 }
-
-theta: f32 = 0.0
 
 @(export)
 update :: proc(dt: f64) {
-	theta += f32(dt) * 100.0
+	theta += f32(dt)
 }
 
 @(export)
 draw :: proc() {
 	rndr.clear_screen({0.2, 0.2, 0.2, 1.0})
 
-	model := glm.mat4Rotate({1.0, 1.0, 1.0}, glm.radians(theta))
+	model := glm.mat4Rotate({1.0, 1.0, 1.0}, theta)
 	view: glm.mat4 = glm.mat4LookAt({0, 10, 0}, {0, 0, -1.0}, {0, 1, 0})
 	projection := glm.mat4Perspective(glm.radians(f32(45)), ASPECT_RATIO, 0.01, 1000.0)
 
@@ -122,10 +120,14 @@ draw :: proc() {
 
 @(export)
 on_event :: proc(ev: core.Event) {
-	switch e in ev {
+	#partial switch e in ev {
 	case core.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
 		}
+	case core.MouseMoveEvent:
+        {
+            // fmt.printfln("Mouse moved to: ({}, {})", e.x, e.y)
+        }
 	}
 }
