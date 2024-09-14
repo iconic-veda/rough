@@ -1,6 +1,6 @@
 package libgame
 
-import "../core"
+import eng "../engine"
 
 when ODIN_OS == .Linux {
 	foreign import game "build/libgame.so"
@@ -16,5 +16,5 @@ foreign game {
 	update :: proc(dt: f64) ---
 	draw :: proc() ---
 
-	on_event :: proc(ev: core.Event) ---
+	on_event :: proc(ev: eng.Event) ---
 }

@@ -1,4 +1,4 @@
-package freya
+package engine
 
 EventCallback :: #type proc(event: Event)
 
@@ -44,8 +44,8 @@ MouseMoveEvent :: struct {
 }
 
 MouseScrollEvent :: struct {
-    x: f32,
-    y: f32,
+	x: f32,
+	y: f32,
 }
 
 

@@ -1,6 +1,4 @@
-package window
-
-import "../../core"
+package engine
 
 import "core:log"
 
@@ -9,7 +7,7 @@ import "vendor:glfw"
 WindowProperties :: struct {
 	width, height:  i32,
 	name:           cstring,
-	event_callback: core.EventCallback,
+	event_callback: EventCallback,
 }
 
 Window :: struct {
@@ -17,11 +15,7 @@ Window :: struct {
 	glfw_window: glfw.WindowHandle,
 }
 
-window_create :: proc(
-	width, height: i32,
-	name: cstring,
-	event_callback: core.EventCallback,
-) -> Window {
+window_create :: proc(width, height: i32, name: cstring, event_callback: EventCallback) -> Window {
 	if (event_callback == nil) {
 		log.fatal("Window must have an event callback")
 	}
@@ -54,7 +48,7 @@ window_create :: proc(
 		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 		props.width = w
 		props.height = h
-		props.event_callback(core.WindowResizeEvent{w, h})
+		props.event_callback(WindowResizeEvent{w, h})
 	})
 
 	glfw.SetWindowCloseCallback(window, proc "c" (window: glfw.WindowHandle) {
@@ -67,11 +61,11 @@ window_create :: proc(
 			props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 			switch (action) {
 			case glfw.REPEAT:
-				props.event_callback(core.KeyPressEvent{core.KeyCode(key), true})
+				props.event_callback(KeyPressEvent{KeyCode(key), true})
 			case glfw.PRESS:
-				props.event_callback(core.KeyPressEvent{core.KeyCode(key), false})
+				props.event_callback(KeyPressEvent{KeyCode(key), false})
 			case glfw.RELEASE:
-				props.event_callback(core.KeyReleaseEvent{core.KeyCode(key)})
+				props.event_callback(KeyReleaseEvent{KeyCode(key)})
 			}
 		},
 	)
@@ -82,24 +76,21 @@ window_create :: proc(
 			props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 			switch (action) {
 			case glfw.PRESS:
-				props.event_callback(core.MouseButtonPressEvent{core.MouseButton(button)})
+				props.event_callback(MouseButtonPressEvent{MouseButton(button)})
 			case glfw.RELEASE:
-				props.event_callback(core.MouseButtonReleaseEvent{core.MouseButton(button)})
+				props.event_callback(MouseButtonReleaseEvent{MouseButton(button)})
 			}
 		},
 	)
 
-	glfw.SetScrollCallback(
-		window,
-		proc "c" (window: glfw.WindowHandle, x, y: f64) {
-			props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
-			props.event_callback(core.MouseScrollEvent{f32(x), f32(y)})
-		},
-	)
+	glfw.SetScrollCallback(window, proc "c" (window: glfw.WindowHandle, x, y: f64) {
+		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
+		props.event_callback(MouseScrollEvent{f32(x), f32(y)})
+	})
 
 	glfw.SetCursorPosCallback(window, proc "c" (window: glfw.WindowHandle, x, y: f64) {
 		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
-		props.event_callback(core.MouseMoveEvent{f32(x), f32(y)})
+		props.event_callback(MouseMoveEvent{f32(x), f32(y)})
 	})
 	return Window{props, window}
 }

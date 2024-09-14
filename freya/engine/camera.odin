@@ -1,4 +1,4 @@
-package freya
+package engine
 
 import glm "core:math/linalg/glsl"
 

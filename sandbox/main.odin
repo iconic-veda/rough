@@ -1,6 +1,6 @@
 package sandbox
 
-import "../freya/core"
+import eng "../freya/engine"
 import rndr "../freya/renderer"
 
 import "core:log"
@@ -119,15 +119,15 @@ draw :: proc() {
 }
 
 @(export)
-on_event :: proc(ev: core.Event) {
+on_event :: proc(ev: eng.Event) {
 	#partial switch e in ev {
-	case core.WindowResizeEvent:
+	case eng.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
 		}
-	case core.MouseMoveEvent:
-        {
-            // fmt.printfln("Mouse moved to: ({}, {})", e.x, e.y)
-        }
+	case eng.MouseMoveEvent:
+		{
+			// fmt.printfln("Mouse moved to: ({}, {})", e.x, e.y)
+		}
 	}
 }
