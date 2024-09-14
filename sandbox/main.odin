@@ -1,23 +1,21 @@
 package sandbox
 
-import eng "../freya/engine"
-import rndr "../freya/renderer"
+import "freya"
 
 import "core:log"
 
 import glm "core:math/linalg/glsl"
 
-vertices: []rndr.Vertex
+vertices: []freya.Vertex
 indices: []u32
-textures: []rndr.Texture
+textures: []freya.Texture
 
-quad: ^rndr.Mesh
-shader: rndr.ShaderProgram
+quad: ^freya.Mesh
+shader: freya.ShaderProgram
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
 theta: f32 = 0.0
 
-@(export)
 initialize :: proc() {
 	log.info("Hello from lib")
 
@@ -85,49 +83,57 @@ initialize :: proc() {
 		22,
 		23, // Face 6
 	}
-	textures = {rndr.texture_new("assets/textures/wall.jpg", .Diffuse)}
+	textures = {freya.texture_new("assets/textures/wall.jpg", .Diffuse)}
 
-	shader = rndr.shader_new(#load("../shaders/vertex.glsl"), #load("../shaders/fragment.glsl"))
-	quad = rndr.mesh_new(vertices, indices, textures)
+	shader = freya.shader_new(#load("../shaders/vertex.glsl"), #load("../shaders/fragment.glsl"))
+	quad = freya.mesh_new(vertices, indices, textures)
 }
 
-@(export)
 shutdown :: proc() {
-	rndr.mesh_free(quad)
-	rndr.shader_delete(shader)
+	freya.mesh_free(quad)
+	freya.shader_delete(shader)
 	// log.info("Goodbye from lib")
 }
 
-@(export)
 update :: proc(dt: f64) {
 	theta += f32(dt)
 }
 
-@(export)
 draw :: proc() {
-	rndr.clear_screen({0.2, 0.2, 0.2, 1.0})
+	freya.clear_screen({0.2, 0.2, 0.2, 1.0})
 
 	model := glm.mat4Rotate({1.0, 1.0, 1.0}, theta)
 	view: glm.mat4 = glm.mat4LookAt({0, 10, 0}, {0, 0, -1.0}, {0, 1, 0})
 	projection := glm.mat4Perspective(glm.radians(f32(45)), ASPECT_RATIO, 0.01, 1000.0)
 
-	rndr.shader_use(shader)
-	rndr.shader_set_uniform(shader, "model", &model)
-	rndr.shader_set_uniform(shader, "projection", &projection)
-	rndr.shader_set_uniform(shader, "view", &view)
-	rndr.mesh_draw(quad, shader)
+	freya.shader_use(shader)
+	freya.shader_set_uniform(shader, "model", &model)
+	freya.shader_set_uniform(shader, "projection", &projection)
+	freya.shader_set_uniform(shader, "view", &view)
+	freya.mesh_draw(quad, shader)
 }
 
-@(export)
-on_event :: proc(ev: eng.Event) {
+on_event :: proc(ev: freya.Event) {
 	#partial switch e in ev {
-	case eng.WindowResizeEvent:
+	case freya.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
 		}
-	case eng.MouseMoveEvent:
+	case freya.MouseMoveEvent:
 		{
 			// fmt.printfln("Mouse moved to: ({}, {})", e.x, e.y)
 		}
 	}
+}
+
+main :: proc() {
+	freya.game = freya.Game {
+		init     = initialize,
+		shutdown = shutdown,
+		update   = update,
+		draw     = draw,
+		on_event = on_event,
+	}
+
+	freya.start_engine()
 }

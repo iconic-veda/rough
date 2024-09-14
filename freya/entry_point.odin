@@ -1,12 +1,22 @@
-package main
+package freya
 
 import eng "engine"
-import "libgame"
 import rndr "renderer"
 
 import "core:log"
 
 SHOULD_RUN: bool = true
+
+Game :: struct {
+	init:     proc(),
+	update:   proc(delta_time: f64),
+	draw:     proc(),
+	shutdown: proc(),
+	on_event: proc(ev: eng.Event),
+}
+
+@(export)
+game: Game
 
 event_callback :: proc(ev: eng.Event) {
 	#partial switch e in ev {
@@ -23,10 +33,12 @@ event_callback :: proc(ev: eng.Event) {
 		}
 	}
 
-	libgame.on_event(ev)
+	game.on_event(ev)
 }
 
-main :: proc() {
+
+@(export)
+start_engine :: proc() {
 	logger := log.create_console_logger()
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
@@ -37,7 +49,7 @@ main :: proc() {
 	rndr.initialize_context()
 	rndr.enable_capabilities({.DEPTH_TEST, .STENCIL_TEST})
 
-	libgame.initialize()
+	game.init()
 
 	last_frame: f64 = 0.0
 	for !eng.window_should_close(&window) && SHOULD_RUN {
@@ -46,10 +58,10 @@ main :: proc() {
 		last_frame = now
 
 		eng.window_poll_events()
-		libgame.update(delta_time)
-		libgame.draw()
+		game.update(delta_time)
+		game.draw()
 
 		eng.window_swapbuffers(&window)
 	}
-	libgame.shutdown()
+	game.shutdown()
 }
