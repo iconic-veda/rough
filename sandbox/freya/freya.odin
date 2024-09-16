@@ -20,7 +20,7 @@ Vertex :: struct {
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	textures:         []Texture,
+	textures:         []^Texture,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -57,6 +57,7 @@ foreign freya {
 	mesh_new_explicit :: proc(vertices: []Vertex, indices: []u32, textures: []Texture, allocator := context.allocator) -> ^Mesh ---
 	mesh_free :: proc(m: ^Mesh) ---
 	mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) ---
+	new_cube_mesh :: proc(textures: []Texture) -> ^Mesh ---
 
 	// Texture bindings
 	texture_new :: proc(filename: cstring, type: TextureType) -> Texture ---
@@ -76,6 +77,7 @@ foreign freya {
 
 	// Renderer bindings
 	clear_screen :: proc(color: glm.vec4) ---
+	draw_grid :: proc() ---
 }
 
 mesh_new :: proc {

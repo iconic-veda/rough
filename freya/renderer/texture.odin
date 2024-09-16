@@ -25,7 +25,7 @@ texture_new :: proc(filename: cstring, type: TextureType) -> Texture {
 	}
 	defer stb_img.image_free(data)
 
-	texture: u32
+	texture: u32 = 0
 	gl.GenTextures(1, &texture)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
@@ -37,5 +37,5 @@ texture_new :: proc(filename: cstring, type: TextureType) -> Texture {
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, data)
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 
-	return Texture{texture, type}
+	return Texture { id=texture, type=type }
 }

@@ -10,6 +10,7 @@ OpenGlCapability :: enum {
 	STENCIL_TEST = gl.STENCIL_TEST,
 	SCISSOR_TEST = gl.SCISSOR_TEST,
 	CULL_FACE    = gl.CULL_FACE,
+	BLEND        = gl.BLEND,
 }
 
 initialize_context :: proc() {
@@ -22,6 +23,15 @@ clear_screen :: proc(color: glm.vec4) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
+@(export)
+draw_grid :: proc() {
+	emptyVAO: u32
+	gl.GenVertexArrays(1, &emptyVAO)
+	gl.BindVertexArray(emptyVAO)
+	gl.DrawArrays(gl.TRIANGLE_STRIP, 0, 4)
+	assert(gl.GetError() == gl.NO_ERROR, "OpenGL error")
+}
+
 on_window_resize :: proc(w, h: i32) {
 	gl.Viewport(0, 0, w, h)
 }
@@ -29,6 +39,9 @@ on_window_resize :: proc(w, h: i32) {
 enable_capabilities :: proc(cap: []OpenGlCapability) {
 	for c in cap {
 		gl.Enable(u32(c))
+		if c == .BLEND {
+			gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		}
 	}
 }
 

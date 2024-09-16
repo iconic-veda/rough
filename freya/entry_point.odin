@@ -47,7 +47,7 @@ start_engine :: proc() {
 	defer eng.window_destroy(&window)
 
 	rndr.initialize_context()
-	rndr.enable_capabilities({.DEPTH_TEST, .STENCIL_TEST})
+	rndr.enable_capabilities({.DEPTH_TEST, .STENCIL_TEST, .BLEND})
 
 	game.init()
 

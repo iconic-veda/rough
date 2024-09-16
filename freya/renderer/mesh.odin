@@ -15,7 +15,7 @@ Vertex :: struct {
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	textures:         []Texture,
+	textures:         [dynamic]Texture,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -25,7 +25,6 @@ Mesh :: struct {
 
 mesh_new :: proc {
 	mesh_new_explicit,
-	mesh_new_from_obj_file,
 }
 
 @(export)
@@ -36,9 +35,6 @@ mesh_free :: proc(m: ^Mesh) {
 	free(m, m._allocator) // Is it ok ?
 }
 
-mesh_new_from_obj_file :: proc(obj_path: string) -> Mesh {
-	unimplemented("Not yet defined how to import objects") // TODO
-}
 
 @(export)
 mesh_new_explicit :: proc(
@@ -50,7 +46,7 @@ mesh_new_explicit :: proc(
 	m := new(Mesh, allocator)
 	m.vertices = vertices
 	m.indices = indices
-	m.textures = textures
+	append(&m.textures, ..textures[:])
 	m._allocator = allocator
 	_mesh_setup_buffers(m)
 	return m
@@ -68,13 +64,16 @@ mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 			unimplemented("Not yet implemented")
 		}
 		shader_set_uniform(shader, name, i32(i))
-		gl.BindTexture(gl.TEXTURE_2D, m.textures[i].id)
+
+		gl.BindTexture(gl.TEXTURE_2D, m.textures[0].id)
 	}
 	gl.ActiveTexture(gl.TEXTURE0)
 
 	gl.BindVertexArray(m._vao)
-	defer gl.BindVertexArray(0)
 	gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
+	gl.BindVertexArray(0)
+
+	assert(gl.GetError() == gl.NO_ERROR, "OpenGL error")
 }
 
 // Private mesh procedures
