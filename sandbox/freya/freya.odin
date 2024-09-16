@@ -38,6 +38,36 @@ TextureType :: enum {
 	Specular,
 }
 
+PerspectiveCamera :: struct {
+	view_mat: glm.mat4,
+	proj_mat: glm.mat4,
+
+	// Camera vectors
+	_up:      glm.vec3,
+	_eye:     glm.vec3,
+	_center:  glm.vec3,
+}
+
+OpenGLCameraController :: struct {
+	using camera:       PerspectiveCamera,
+
+	// Private
+	_aspect_ratio:      f32,
+	_fov:               f32,
+	_near, _far:        f32,
+	_yaw, _pitch:       f32,
+
+	//
+	_right:             glm.vec3,
+	_forward:           glm.vec3,
+	_position:          glm.vec3,
+
+	//
+	_rotation_speed:    f32,
+	_translation_speed: f32,
+}
+
+
 ShaderProgram :: u32
 
 when ODIN_OS == .Linux {
@@ -78,6 +108,13 @@ foreign freya {
 	// Renderer bindings
 	clear_screen :: proc(color: glm.vec4) ---
 	draw_grid :: proc() ---
+
+
+	// Camera system
+	camera_controller_new :: proc(aspect_ratio: f32, fov: f32, near, far: f32) -> OpenGLCameraController ---
+	new_camera_controller :: proc(aspect_ratio: f32, fov: f32 = 45.0, near: f32 = 0.1, far: f32 = 1000.0) -> OpenGLCameraController ---
+	camera_on_event :: proc(controller: ^OpenGLCameraController, event: Event) ---
+	camera_on_update :: proc(controller: ^OpenGLCameraController, dt: f64) ---
 }
 
 mesh_new :: proc {

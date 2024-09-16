@@ -1,32 +1,32 @@
-package freya
+package engine
 
-import eng "engine"
 import rndr "renderer"
 
 import "core:log"
 
 SHOULD_RUN: bool = true
+WINDOW: Window
 
 Game :: struct {
 	init:     proc(),
 	update:   proc(delta_time: f64),
 	draw:     proc(),
 	shutdown: proc(),
-	on_event: proc(ev: eng.Event),
+	on_event: proc(ev: Event),
 }
 
 @(export)
 game: Game
 
-event_callback :: proc(ev: eng.Event) {
+event_callback :: proc(ev: Event) {
 	#partial switch e in ev {
-	case eng.WindowResizeEvent:
+	case WindowResizeEvent:
 		{
 			rndr.on_window_resize(e.width, e.height)
 		}
-	case eng.KeyPressEvent:
+	case KeyPressEvent:
 		{
-			if e.code == eng.KeyCode.Escape {
+			if e.code == KeyCode.Escape {
 				SHOULD_RUN = false
 				return
 			}
@@ -43,25 +43,27 @@ start_engine :: proc() {
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
 
-	window := eng.window_create(800, 600, "Freya Engine", event_callback)
-	defer eng.window_destroy(&window)
+	WINDOW = window_create(800, 600, "Freya Engine", event_callback)
+	defer window_destroy(&WINDOW)
 
 	rndr.initialize_context()
 	rndr.enable_capabilities({.DEPTH_TEST, .STENCIL_TEST, .BLEND})
 
+	window_toggle_cursor(&WINDOW)
+
 	game.init()
 
 	last_frame: f64 = 0.0
-	for !eng.window_should_close(&window) && SHOULD_RUN {
-		now := eng.window_get_time()
+	for !window_should_close(&WINDOW) && SHOULD_RUN {
+		now := window_get_time()
 		delta_time := now - last_frame
 		last_frame = now
 
-		eng.window_poll_events()
+		window_poll_events()
 		game.update(delta_time)
 		game.draw()
 
-		eng.window_swapbuffers(&window)
+		window_swapbuffers(&WINDOW)
 	}
 	game.shutdown()
 }
