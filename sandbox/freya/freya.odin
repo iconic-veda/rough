@@ -17,6 +17,10 @@ Vertex :: struct {
 	tex_coords: glm.vec2,
 }
 
+Model :: struct {
+	meshes: [dynamic]^Mesh,
+}
+
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
@@ -27,6 +31,16 @@ Mesh :: struct {
 	_binding_index:   u32,
 	_allocator:       mem.Allocator,
 }
+
+Material :: struct {
+	ambient, diffuse, specular: glm.vec3,
+	shininess:                  f32,
+}
+
+Light :: struct {
+	position, ambient, diffuse, specular: glm.vec3,
+}
+
 
 Texture :: struct {
 	id:   u32,
@@ -82,6 +96,11 @@ foreign freya {
 	// Game
 	game: Game
 	start_engine :: proc() ---
+
+	// Model bindings
+	model_new :: proc(file_path: string) -> ^Model ---
+	model_free :: proc(model: ^Model) ---
+	model_draw :: proc(model: ^Model, shader: ShaderProgram) ---
 
 	// Mesh bindings
 	mesh_new_explicit :: proc(vertices: []Vertex, indices: []u32, textures: []Texture, allocator := context.allocator) -> ^Mesh ---

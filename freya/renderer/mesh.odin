@@ -5,6 +5,15 @@ import "core:mem"
 import glm "core:math/linalg/glsl"
 import gl "vendor:OpenGL"
 
+Material :: struct {
+	ambient, diffuse, specular: glm.vec3,
+	shininess:                  f32,
+}
+
+Light :: struct {
+	position, ambient, diffuse, specular: glm.vec3,
+}
+
 Vertex :: struct {
 	position:   glm.vec3,
 	normal:     glm.vec3,
