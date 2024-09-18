@@ -6,12 +6,22 @@ import glm "core:math/linalg/glsl"
 import gl "vendor:OpenGL"
 
 Material :: struct {
-	ambient, diffuse, specular: glm.vec3,
-	shininess:                  f32,
+	shininess: f32,
 }
 
 Light :: struct {
-	position, ambient, diffuse, specular: glm.vec3,
+	ambient, diffuse, specular: glm.vec3,
+}
+
+PointLight :: struct {
+	using light:                 Light,
+	position:                    glm.vec3,
+	constant, linear, quadratic: f32,
+}
+
+DirectionalLight :: struct {
+	using light: Light,
+	direction:   glm.vec3,
 }
 
 Vertex :: struct {
@@ -65,16 +75,16 @@ mesh_new_explicit :: proc(
 mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 	for i: u32 = 0; i < u32(len(m.textures)); i += 1 {
 		gl.ActiveTexture(gl.TEXTURE0 + i)
-		name: cstring
+		name: string
 		switch m.textures[i].type {
 		case TextureType.Diffuse:
-			name = "texture_diffuse"
+			name = "material.diffuse"
 		case TextureType.Specular:
-			unimplemented("Not yet implemented")
+			name = "material.specular"
 		}
-		shader_set_uniform(shader, name, i32(i))
 
-		gl.BindTexture(gl.TEXTURE_2D, m.textures[0].id)
+		shader_set_uniform(shader, name, i32(i))
+		gl.BindTexture(gl.TEXTURE_2D, m.textures[i].id)
 	}
 	gl.ActiveTexture(gl.TEXTURE0)
 

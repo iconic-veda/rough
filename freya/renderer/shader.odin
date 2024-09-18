@@ -1,6 +1,7 @@
 package renderer
 
 import "core:log"
+import "core:strings"
 
 import glm "core:math/linalg/glsl"
 
@@ -39,31 +40,37 @@ shader_set_uniform :: proc {
 }
 
 @(export, private)
-_shader_set_uniform_bool :: proc(shader: ShaderProgram, name: cstring, value: bool) {
-	gl.Uniform1i(gl.GetUniformLocation(shader, name), i32(value))
+_shader_set_uniform_bool :: proc(shader: ShaderProgram, name: string, value: bool) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform1i(gl.GetUniformLocation(shader, n), i32(value))
 }
 
 @(export, private)
-_shader_set_uniform_int :: proc(shader: ShaderProgram, name: cstring, value: i32) {
-	gl.Uniform1i(gl.GetUniformLocation(shader, name), value)
+_shader_set_uniform_int :: proc(shader: ShaderProgram, name: string, value: i32) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform1i(gl.GetUniformLocation(shader, n), value)
 }
 
 @(export, private)
-_shader_set_uniform_float :: proc(shader: ShaderProgram, name: cstring, value: f32) {
-	gl.Uniform1f(gl.GetUniformLocation(shader, name), value)
+_shader_set_uniform_float :: proc(shader: ShaderProgram, name: string, value: f32) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform1f(gl.GetUniformLocation(shader, n), value)
 }
 
 @(export, private)
-_shader_set_uniform_vec2 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.vec2) {
-	gl.Uniform2f(gl.GetUniformLocation(shader, name), value.x, value.y)
+_shader_set_uniform_vec2 :: proc(shader: ShaderProgram, name: string, value: ^glm.vec2) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform2f(gl.GetUniformLocation(shader, n), value.x, value.y)
 }
 
 @(export, private)
-_shader_set_uniform_vec3 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.vec3) {
-	gl.Uniform3f(gl.GetUniformLocation(shader, name), value.x, value.y, value.z)
+_shader_set_uniform_vec3 :: proc(shader: ShaderProgram, name: string, value: ^glm.vec3) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform3f(gl.GetUniformLocation(shader, n), value.x, value.y, value.z)
 }
 
 @(export, private)
-_shader_set_uniform_mat4 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.mat4) {
-	gl.UniformMatrix4fv(gl.GetUniformLocation(shader, name), 1, gl.FALSE, raw_data(value))
+_shader_set_uniform_mat4 :: proc(shader: ShaderProgram, name: string, value: ^glm.mat4) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.UniformMatrix4fv(gl.GetUniformLocation(shader, n), 1, gl.FALSE, raw_data(value))
 }

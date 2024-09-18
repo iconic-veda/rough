@@ -33,12 +33,22 @@ Mesh :: struct {
 }
 
 Material :: struct {
-	ambient, diffuse, specular: glm.vec3,
-	shininess:                  f32,
+	shininess: f32,
 }
 
 Light :: struct {
-	position, ambient, diffuse, specular: glm.vec3,
+	ambient, diffuse, specular: glm.vec3,
+}
+
+PointLight :: struct {
+	using light:                 Light,
+	position:                    glm.vec3,
+	constant, linear, quadratic: f32,
+}
+
+DirectionalLight :: struct {
+	using light: Light,
+	direction:   glm.vec3,
 }
 
 
@@ -116,12 +126,12 @@ foreign freya {
 	shader_use :: proc(shader: ShaderProgram) ---
 	shader_delete :: proc(shader: ShaderProgram) ---
 
-	_shader_set_uniform_bool :: proc(shader: ShaderProgram, name: cstring, value: bool) ---
-	_shader_set_uniform_int :: proc(shader: ShaderProgram, name: cstring, value: i32) ---
-	_shader_set_uniform_float :: proc(shader: ShaderProgram, name: cstring, value: f32) ---
-	_shader_set_uniform_vec2 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.vec2) ---
-	_shader_set_uniform_vec3 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.vec3) ---
-	_shader_set_uniform_mat4 :: proc(shader: ShaderProgram, name: cstring, value: ^glm.mat4) ---
+	_shader_set_uniform_bool :: proc(shader: ShaderProgram, name: string, value: bool) ---
+	_shader_set_uniform_int :: proc(shader: ShaderProgram, name: string, value: i32) ---
+	_shader_set_uniform_float :: proc(shader: ShaderProgram, name: string, value: f32) ---
+	_shader_set_uniform_vec2 :: proc(shader: ShaderProgram, name: string, value: ^glm.vec2) ---
+	_shader_set_uniform_vec3 :: proc(shader: ShaderProgram, name: string, value: ^glm.vec3) ---
+	_shader_set_uniform_mat4 :: proc(shader: ShaderProgram, name: string, value: ^glm.mat4) ---
 
 
 	// Renderer bindings

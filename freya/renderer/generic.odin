@@ -41,6 +41,9 @@ enable_capabilities :: proc(cap: []OpenGlCapability) {
 		gl.Enable(u32(c))
 		if c == .BLEND {
 			gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		} else if c == .DEPTH_TEST {
+			// Last element drawn are in from of all other fragments
+			// gl.DepthFunc(gl.ALWAYS)
 		}
 	}
 }
