@@ -1,5 +1,8 @@
 package renderer
 
+import "base:runtime"
+
+import "core:log"
 import glm "core:math/linalg/glsl"
 
 import gl "vendor:OpenGL"
@@ -11,6 +14,7 @@ OpenGlCapability :: enum {
 	SCISSOR_TEST = gl.SCISSOR_TEST,
 	CULL_FACE    = gl.CULL_FACE,
 	BLEND        = gl.BLEND,
+	DEBUG_OUTPUT = gl.DEBUG_OUTPUT,
 }
 
 initialize_context :: proc() {
@@ -36,20 +40,56 @@ on_window_resize :: proc(w, h: i32) {
 	gl.Viewport(0, 0, w, h)
 }
 
+debug_callback :: proc "c" (
+	source: u32,
+	type: u32,
+	id: u32,
+	severity: u32,
+	length: i32,
+	message: cstring,
+	userParam: rawptr,
+) {
+	context = runtime.default_context()
+	logger := log.create_console_logger()
+	context.logger = logger
+	defer log.destroy_console_logger(logger)
+
+	// TODO: not yet implemented
+	log.infof("OpenGL debug message: {}", message)
+}
+
+@(export)
 enable_capabilities :: proc(cap: []OpenGlCapability) {
 	for c in cap {
 		gl.Enable(u32(c))
 		if c == .BLEND {
+			gl.BlendEquation(gl.FUNC_ADD)
 			gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		} else if c == .DEPTH_TEST {
 			// Last element drawn are in from of all other fragments
 			// gl.DepthFunc(gl.ALWAYS)
+		} else if c == .CULL_FACE {
+			gl.CullFace(gl.BACK)
+			gl.FrontFace(gl.CCW)
+		} else if c == .DEBUG_OUTPUT {
+			gl.Enable(gl.DEBUG_OUTPUT)
+			gl.DebugMessageCallback(debug_callback, nil)
 		}
 	}
 }
 
+@(export)
 disable_capabilities :: proc(cap: []OpenGlCapability) {
 	for c in cap {
 		gl.Disable(u32(c))
+	}
+}
+
+@(export)
+toggle_depth_writing :: proc(enable: bool) {
+	if enable {
+		gl.DepthMask(gl.TRUE)
+	} else {
+		gl.DepthMask(gl.FALSE)
 	}
 }

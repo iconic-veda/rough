@@ -32,6 +32,5 @@ void main() {
 
     frag_view = view;
     frag_proj = projection;
-
     gl_Position = vec4(p, 1.0);
 }

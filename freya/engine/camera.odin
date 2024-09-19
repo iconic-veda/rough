@@ -134,16 +134,17 @@ camera_on_update :: proc(controller: ^OpenGLCameraController, dt: f64) {
 	}
 
 	{ 	// Update view matrix
-		front: glm.vec3
-		front.x = math.cos(glm.radians(controller._yaw)) * math.cos(glm.radians(controller._pitch))
-		front.y = math.sin(glm.radians(controller._pitch))
-		front.z = math.sin(glm.radians(controller._yaw)) * math.cos(glm.radians(controller._pitch))
+		direction: glm.vec3
+		direction.x =
+			math.cos(glm.radians(controller._yaw)) * math.cos(glm.radians(controller._pitch))
+		direction.y = math.sin(glm.radians(controller._pitch))
+		direction.z =
+			math.sin(glm.radians(controller._yaw)) * math.cos(glm.radians(controller._pitch))
 
-		controller._forward = glm.normalize(front)
-		controller._right = glm.normalize(glm.cross(controller._forward, glm.vec3{0.0, 1.0, 0.0}))
+		controller._forward = glm.normalize(direction)
+		controller._right = glm.normalize(glm.cross(controller._forward, glm.vec3{0, 1, 0}))
 		controller._up = glm.normalize(glm.cross(controller._right, controller._forward))
 
-		controller._up = controller._up
 		controller._eye = controller._position
 		controller._center = controller._position + controller._forward
 		camera_calculate_view_matrix(&controller.camera)

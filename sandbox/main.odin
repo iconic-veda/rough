@@ -79,6 +79,15 @@ stop_watch: time.Stopwatch
 initialize :: proc() {
 	time.stopwatch_start(&stop_watch)
 
+	freya.enable_capabilities(
+		{
+			freya.OpenGlCapability.CULL_FACE,
+			freya.OpenGlCapability.DEPTH_TEST,
+			freya.OpenGlCapability.STENCIL_TEST,
+			freya.OpenGlCapability.BLEND,
+		},
+	)
+
 	camera_controller = freya.new_camera_controller(ASPECT_RATIO)
 
 	{ 	// Initialize shaders
@@ -99,11 +108,19 @@ initialize :: proc() {
 	}
 
 	{ 	// Iniziale model and cube
-		model = freya.model_new("assets/models/train/Models/OBJ format/train-locomotive-c.obj")
+		model = freya.model_new(
+			"assets/models/backpack/backpack.obj", // "assets/models/train/Models/OBJ format/train-electric-bullet-a.obj",
+		)
 
-		textures: []freya.Texture = {
-			freya.texture_new("assets/textures/container2.png", .Diffuse),
-			freya.texture_new("assets/textures/container2_specular_color.png", .Specular),
+		textures: []freya.TextureHandle = {
+			freya.resource_manager_add(
+				"assets/textures/container2.png",
+				freya.TextureType.Diffuse,
+			),
+			freya.resource_manager_add(
+				"assets/textures/container2_specular.png",
+				freya.TextureType.Specular,
+			),
 		}
 		cube = freya.new_cube_mesh(textures)
 	}
@@ -153,7 +170,7 @@ draw :: proc() {
 	}
 
 	{ 	// Setup & draw cube
-		model_transform := glm.mat4(1.0)
+		model_transform := glm.mat4(1.0) //* glm.mat4Translate({0.0, 3, 0.0})
 
 		freya.shader_use(shader)
 		freya.shader_set_uniform(shader, "view_pos", &camera_controller._position)
@@ -217,7 +234,7 @@ draw :: proc() {
 	}
 
 	{ 	// Setup model matrix && submit data to draw
-		model_transform := glm.mat4Translate({3, 0, 3}) //* glm.mat4Scale({100, 100, 100})
+		model_transform := glm.mat4Translate({5, 3, 5}) //* glm.mat4Scale({100, 100, 100})
 
 		freya.shader_use(shader)
 		freya.shader_set_uniform(shader, "view_pos", &camera_controller._position)
@@ -280,12 +297,12 @@ draw :: proc() {
 		freya.model_draw(model, shader)
 	}
 
-	// { 	// Draw grid
-	// 	freya.shader_use(grid_shader)
-	// 	freya.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
-	// 	freya.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
-	// 	freya.draw_grid()
-	// }
+	{ 	// Draw grid
+		freya.shader_use(grid_shader)
+		freya.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
+		freya.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
+		freya.draw_grid()
+	}
 }
 
 on_event :: proc(ev: freya.Event) {

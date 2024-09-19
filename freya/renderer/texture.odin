@@ -1,6 +1,7 @@
 package renderer
 
 import "core:log"
+import "core:strings"
 
 import gl "vendor:OpenGL"
 import stb_img "vendor:stb/image"
@@ -8,6 +9,7 @@ import stb_img "vendor:stb/image"
 Texture :: struct {
 	id:   u32,
 	type: TextureType,
+	path: string,
 }
 
 TextureType :: enum {
@@ -16,7 +18,9 @@ TextureType :: enum {
 }
 
 @(export)
-texture_new :: proc(filename: cstring, type: TextureType) -> Texture {
+texture_new :: proc(file_path: string, type: TextureType) -> ^Texture {
+	filename := strings.unsafe_string_to_cstring(file_path)
+
 	width, height, channels: i32
 	stb_img.set_flip_vertically_on_load(1)
 	data: [^]byte = stb_img.load(filename, &width, &height, &channels, 0)
@@ -48,5 +52,16 @@ texture_new :: proc(filename: cstring, type: TextureType) -> Texture {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
-	return Texture{id = texture, type = type}
+	tex := new(Texture)
+	tex.id = texture
+	tex.type = type
+	tex.path = file_path[:]
+
+	return tex
+}
+
+@(export)
+texture_free :: proc(texture: ^Texture) {
+	gl.DeleteTextures(1, &texture.id)
+	free(texture)
 }

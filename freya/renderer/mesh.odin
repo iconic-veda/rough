@@ -34,7 +34,7 @@ Vertex :: struct {
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	textures:         [dynamic]Texture,
+	textures:         [dynamic]TextureHandle,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -59,7 +59,7 @@ mesh_free :: proc(m: ^Mesh) {
 mesh_new_explicit :: proc(
 	vertices: []Vertex,
 	indices: []u32,
-	textures: []Texture,
+	textures: []TextureHandle,
 	allocator := context.allocator,
 ) -> ^Mesh {
 	m := new(Mesh, allocator)
@@ -73,18 +73,20 @@ mesh_new_explicit :: proc(
 
 @(export)
 mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
-	for i: u32 = 0; i < u32(len(m.textures)); i += 1 {
-		gl.ActiveTexture(gl.TEXTURE0 + i)
+	for texture_handle, idx in m.textures {
+		texture := resource_manager_get(texture_handle)
+
 		name: string
-		switch m.textures[i].type {
+		switch texture.type {
 		case TextureType.Diffuse:
 			name = "material.diffuse"
 		case TextureType.Specular:
 			name = "material.specular"
 		}
 
-		shader_set_uniform(shader, name, i32(i))
-		gl.BindTexture(gl.TEXTURE_2D, m.textures[i].id)
+		shader_set_uniform(shader, name, i32(idx))
+		gl.ActiveTexture(gl.TEXTURE0 + u32(idx))
+		gl.BindTexture(gl.TEXTURE_2D, texture.id)
 	}
 	gl.ActiveTexture(gl.TEXTURE0)
 

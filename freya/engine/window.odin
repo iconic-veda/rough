@@ -4,6 +4,8 @@ import "core:log"
 
 import "vendor:glfw"
 
+WINDOW: Window
+
 WindowProperties :: struct {
 	width, height:  i32,
 	name:           cstring,

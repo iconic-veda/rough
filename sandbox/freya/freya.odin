@@ -3,12 +3,31 @@ package freya
 import glm "core:math/linalg/glsl"
 import "core:mem"
 
+import gl "vendor:OpenGL"
+
+OpenGlCapability :: enum {
+	DEPTH_TEST   = gl.DEPTH_TEST,
+	STENCIL_TEST = gl.STENCIL_TEST,
+	SCISSOR_TEST = gl.SCISSOR_TEST,
+	CULL_FACE    = gl.CULL_FACE,
+	BLEND        = gl.BLEND,
+	DEBUG_OUTPUT = gl.DEBUG_OUTPUT,
+}
+
 Game :: struct {
 	init:     proc(),
 	update:   proc(delta_time: f64),
 	draw:     proc(),
 	shutdown: proc(),
 	on_event: proc(ev: Event),
+}
+
+Handle :: #type string
+ShaderHandle :: distinct Handle
+TextureHandle :: distinct Handle
+
+ResourceManager :: struct {
+	textures: map[TextureHandle]^Texture,
 }
 
 Vertex :: struct {
@@ -24,7 +43,7 @@ Model :: struct {
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	textures:         []^Texture,
+	textures:         []TextureHandle,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -55,6 +74,7 @@ DirectionalLight :: struct {
 Texture :: struct {
 	id:   u32,
 	type: TextureType,
+	path: string,
 }
 
 TextureType :: enum {
@@ -100,7 +120,6 @@ when ODIN_OS == .Linux {
 	foreign import libgame "build/freya.dll"
 }
 
-
 @(default_calling_convention = "odin")
 foreign freya {
 	// Game
@@ -113,13 +132,14 @@ foreign freya {
 	model_draw :: proc(model: ^Model, shader: ShaderProgram) ---
 
 	// Mesh bindings
-	mesh_new_explicit :: proc(vertices: []Vertex, indices: []u32, textures: []Texture, allocator := context.allocator) -> ^Mesh ---
+	mesh_new_explicit :: proc(vertices: []Vertex, indices: []u32, textures: []TextureHandle, allocator := context.allocator) -> ^Mesh ---
 	mesh_free :: proc(m: ^Mesh) ---
 	mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) ---
-	new_cube_mesh :: proc(textures: []Texture) -> ^Mesh ---
+	new_cube_mesh :: proc(textures: []TextureHandle) -> ^Mesh ---
 
 	// Texture bindings
-	texture_new :: proc(filename: cstring, type: TextureType) -> Texture ---
+	texture_new :: proc(file_path: string, type: TextureType) -> ^Texture ---
+	texture_free :: proc(texture: ^Texture) ---
 
 	// Shader bindings
 	shader_new :: proc(vertex_source, fragment_source: string) -> ShaderProgram ---
@@ -137,13 +157,21 @@ foreign freya {
 	// Renderer bindings
 	clear_screen :: proc(color: glm.vec4) ---
 	draw_grid :: proc() ---
-
+	enable_capabilities :: proc(cap: []OpenGlCapability) ---
+	disable_capabilities :: proc(cap: []OpenGlCapability) ---
+	toggle_depth_writing :: proc(enable: bool) ---
 
 	// Camera system
 	camera_controller_new :: proc(aspect_ratio: f32, fov: f32, near, far: f32) -> OpenGLCameraController ---
 	new_camera_controller :: proc(aspect_ratio: f32, fov: f32 = 45.0, near: f32 = 0.1, far: f32 = 1000.0) -> OpenGLCameraController ---
 	camera_on_event :: proc(controller: ^OpenGLCameraController, event: Event) ---
 	camera_on_update :: proc(controller: ^OpenGLCameraController, dt: f64) ---
+
+
+	// Resource manager
+	resource_manager_add_texture :: proc(path: string, type: TextureType) -> TextureHandle ---
+	resource_manager_get_texture :: proc(handle: TextureHandle) -> ^Texture ---
+	resource_manager_delete_texture :: proc(handle: TextureHandle) ---
 }
 
 mesh_new :: proc {
@@ -157,6 +185,19 @@ shader_set_uniform :: proc {
 	_shader_set_uniform_vec2,
 	_shader_set_uniform_vec3,
 	_shader_set_uniform_mat4,
+}
+
+
+resource_manager_get :: proc {
+	resource_manager_get_texture,
+}
+
+resource_manager_add :: proc {
+	resource_manager_add_texture,
+}
+
+resource_manager_delete :: proc {
+	resource_manager_delete_texture,
 }
 
 

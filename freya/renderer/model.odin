@@ -1,6 +1,7 @@
 package renderer
 
 import "core:log"
+import "core:path/filepath"
 // import glm "core:math/linalg/glsl"
 
 import "../vendor/assimp"
@@ -11,6 +12,7 @@ Model :: struct {
 
 @(export)
 model_new :: proc(file_path: string) -> ^Model {
+	log.infof("Loading model: {}", file_path)
 	model := new(Model)
 
 	scene := assimp.import_file(
@@ -20,17 +22,21 @@ model_new :: proc(file_path: string) -> ^Model {
 	defer {
 		// assimp.release_import(scene)
 		assimp.free_scene(scene)
-		log.info("Unload model's scene completed!")
+		log.info("Model loaded, unload model's scene completed!")
 	}
 
 	if scene == nil ||
 	   scene.mFlags & u32(assimp.SceneFlags.INCOMPLETE) != 0 ||
 	   scene.mRootNode == nil {
-		log.fatal("Failed to load model: %s", file_path)
+		log.fatalf("Failed to load model: {}", file_path)
 	}
 
-
-	process_node :: proc(node: ^assimp.Node, scene: ^assimp.Scene, model: ^Model) {
+	process_node :: proc(
+		node: ^assimp.Node,
+		scene: ^assimp.Scene,
+		model: ^Model,
+		base_path: string,
+	) {
 		// Process meshes if any
 		for i: u32 = 0; i < node.mNumMeshes; i += 1 {
 			assimp_mesh := scene.mMeshes[node.mMeshes[i]]
@@ -41,6 +47,7 @@ model_new :: proc(file_path: string) -> ^Model {
 				vertices[vertex_idx].position = assimp_mesh.mVertices[vertex_idx].xyz
 				vertices[vertex_idx].normal = assimp_mesh.mNormals[vertex_idx].xyz
 
+				// NOTE: We only care about the first set of texture coordinates
 				if assimp_mesh.mTextureCoords[0] != nil {
 					vertices[vertex_idx].tex_coords = assimp_mesh.mTextureCoords[0][vertex_idx].xy
 				} else {
@@ -58,16 +65,82 @@ model_new :: proc(file_path: string) -> ^Model {
 			}
 			indices = indices[:num_indices]
 
-			// TODO: Extract material/textures
-			append(&model.meshes, mesh_new(vertices, indices, nil))
+			textures: []TextureHandle = nil
+			if assimp_mesh.mMaterialIndex >= 0 {
+				material := scene.mMaterials[assimp_mesh.mMaterialIndex]
+				load_textures :: proc(
+					material: ^assimp.Material,
+					type: assimp.TextureType,
+					base_path: string,
+				) -> []TextureHandle {
+					texture_count := assimp.get_material_textureCount(material, type)
+					textures: []TextureHandle = make([]TextureHandle, texture_count)
+					for texture_idx: u32 = 0; texture_idx < texture_count; texture_idx += 1 {
+						object_relative_path: assimp.String
+						mapping: assimp.TextureMapping
+						uvindex: u32
+						blend: f64
+						op: assimp.TextureOp
+						mapmode: assimp.TextureMapMode
+						assimp.get_material_texture(
+							material,
+							type,
+							texture_idx,
+							&object_relative_path,
+							&mapping,
+							&uvindex,
+							&blend,
+							&op,
+							&mapmode,
+						)
+
+						texture_path := filepath.join(
+							{
+								base_path,
+								transmute(string)object_relative_path.data[:object_relative_path.length],
+							},
+						)
+						// TODO: Use assimp mapping/uvindex/blend/op/mapmode to create texture
+						#partial switch type {
+						case assimp.TextureType.DIFFUSE:
+							textures[texture_idx] = resource_manager_add(
+								texture_path,
+								TextureType.Diffuse,
+							)
+						case assimp.TextureType.SPECULAR:
+							textures[texture_idx] = resource_manager_add(
+								texture_path,
+								TextureType.Specular,
+							)
+						case:
+							log.fatal("Texture type not supported", type)
+						}
+					}
+					return textures
+				}
+
+				textures_diffuse := load_textures(material, assimp.TextureType.DIFFUSE, base_path)
+				textures_specular := load_textures(
+					material,
+					assimp.TextureType.SPECULAR,
+					base_path,
+				)
+
+				textures = make([]TextureHandle, len(textures_diffuse) + len(textures_specular))
+				copy(textures, textures_diffuse)
+				copy(textures[len(textures_diffuse):], textures_specular)
+			}
+			append(&model.meshes, mesh_new(vertices, indices, textures))
 		}
 
 		// Process child obj
 		for child_idx: u32 = 0; child_idx < node.mNumChildren; child_idx += 1 {
-			process_node(node.mChildren[child_idx], scene, model)
+			process_node(node.mChildren[child_idx], scene, model, base_path)
 		}
 	}
-	process_node(scene.mRootNode, scene, model)
+
+	base_path := filepath.dir(file_path)
+	process_node(scene.mRootNode, scene, model, base_path)
 	return model
 }
 

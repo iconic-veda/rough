@@ -34,8 +34,8 @@ float compute_linear_depth(vec3 pos) {
     float far = 100.0;
     float near = 0.1;
 
-    vec4 clip_space_pos = frag_proj * frag_view * vec4(pos, 1.0);
-    float clip_space_depth = (clip_space_pos.z / clip_space_pos.w) * 2.0 + 1.0;
+    vec4 clip_space_pos = frag_proj * frag_view * vec4(pos.xyz, 1.0);
+    float clip_space_depth = (clip_space_pos.z / clip_space_pos.w) * 2.0 - 1.0;
     float linear_depth = (2.0 * near * far) / (far + near - clip_space_depth * (far - near));
     return linear_depth / far;
 }
