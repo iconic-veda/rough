@@ -15,8 +15,7 @@ Game :: struct {
 	on_event: proc(ev: engn.Event),
 }
 
-@(export)
-game: Game
+GAME: Game
 
 event_callback :: proc(ev: engn.Event) {
 	#partial switch e in ev {
@@ -33,12 +32,14 @@ event_callback :: proc(ev: engn.Event) {
 		}
 	}
 
-	game.on_event(ev)
+	GAME.on_event(ev)
 }
 
 
 @(export)
-start_engine :: proc() {
+start_engine :: proc(game: Game) {
+    GAME = game
+
 	logger := log.create_console_logger()
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
@@ -53,7 +54,7 @@ start_engine :: proc() {
 	rndr.resource_manager_new()
 	defer rndr.resource_manager_free()
 
-	game.init()
+	GAME.init()
 
 	last_frame: f64 = 0.0
 	for !engn.window_should_close(&engn.WINDOW) && SHOULD_RUN {
@@ -62,10 +63,10 @@ start_engine :: proc() {
 		last_frame = now
 
 		engn.window_poll_events()
-		game.update(delta_time)
-		game.draw()
+		GAME.update(delta_time)
+		GAME.draw()
 
 		engn.window_swapbuffers(&engn.WINDOW)
 	}
-	game.shutdown()
+	GAME.shutdown()
 }

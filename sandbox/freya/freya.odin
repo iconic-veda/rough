@@ -117,14 +117,13 @@ ShaderProgram :: u32
 when ODIN_OS == .Linux {
 	foreign import freya "build/freya.so"
 } else when ODIN_OS == .Windows {
-	foreign import libgame "build/freya.dll"
+	foreign import freya "../../build/freya.lib"
 }
 
 @(default_calling_convention = "odin")
 foreign freya {
 	// Game
-	game: Game
-	start_engine :: proc() ---
+	start_engine :: proc(game: Game) ---
 
 	// Model bindings
 	model_new :: proc(file_path: string) -> ^Model ---

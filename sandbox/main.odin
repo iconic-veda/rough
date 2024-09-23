@@ -317,13 +317,11 @@ on_event :: proc(ev: freya.Event) {
 }
 
 main :: proc() {
-	freya.game = freya.Game {
+	freya.start_engine(freya.Game {
 		init     = initialize,
 		shutdown = shutdown,
 		update   = update,
 		draw     = draw,
 		on_event = on_event,
-	}
-
-	freya.start_engine()
+	})
 }
