@@ -115,7 +115,7 @@ OpenGLCameraController :: struct {
 ShaderProgram :: u32
 
 when ODIN_OS == .Linux {
-	foreign import freya "build/freya.so"
+	foreign import freya "../../build/freya.so"
 } else when ODIN_OS == .Windows {
 	foreign import freya "../../build/freya.lib"
 }
