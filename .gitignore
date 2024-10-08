@@ -24,3 +24,6 @@
 !assets/textures/.gitkeep
 
 !freya_kanban
+
+!build.sh
+!build.bat
