@@ -1,8 +1,9 @@
 package sandbox
 
-import "freya"
+import freya "../freya"
+import engine "../freya/engine"
+import renderer "../freya/renderer"
 
-// import "core:math"
 import "core:strconv"
 import "core:strings"
 import "core:time"
@@ -11,19 +12,19 @@ import glm "core:math/linalg/glsl"
 
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
-camera_controller: freya.OpenGLCameraController
+camera_controller: engine.OpenGLCameraController
 
-shader: freya.ShaderProgram
-grid_shader: freya.ShaderProgram
-light_bulb_shader: freya.ShaderProgram
+shader: renderer.ShaderProgram
+grid_shader: renderer.ShaderProgram
+light_bulb_shader: renderer.ShaderProgram
 
-cube: ^freya.Mesh
-model: ^freya.Model
+cube: ^renderer.Mesh
+model: ^renderer.Model
 
-light_cube: ^freya.Mesh
+light_cube: ^renderer.Mesh
 
 
-POINT_LIGHTS: [4]freya.PointLight = {
+POINT_LIGHTS: [4]renderer.PointLight = {
 	{
 		position = {0.7, 0.2, 2.0},
 		ambient = {0.05, 0.05, 0.05},
@@ -62,14 +63,14 @@ POINT_LIGHTS: [4]freya.PointLight = {
 	},
 }
 
-DIR_LIGHT: freya.DirectionalLight = {
+DIR_LIGHT: renderer.DirectionalLight = {
 	direction = {-0.2, -1.0, -0.3},
 	ambient   = {0.05, 0.05, 0.05},
 	diffuse   = {0.4, 0.4, 0.4},
 	specular  = {0.5, 0.5, 0.5},
 }
 
-MATERIAL: freya.Material = {
+MATERIAL: renderer.Material = {
 	shininess = 120.0,
 }
 
@@ -79,65 +80,65 @@ stop_watch: time.Stopwatch
 initialize :: proc() {
 	time.stopwatch_start(&stop_watch)
 
-	freya.enable_capabilities(
+	renderer.enable_capabilities(
 		{
-			freya.OpenGlCapability.CULL_FACE,
-			freya.OpenGlCapability.DEPTH_TEST,
-			freya.OpenGlCapability.STENCIL_TEST,
-			freya.OpenGlCapability.BLEND,
+			renderer.OpenGlCapability.CULL_FACE,
+			renderer.OpenGlCapability.DEPTH_TEST,
+			renderer.OpenGlCapability.STENCIL_TEST,
+			renderer.OpenGlCapability.BLEND,
 		},
 	)
 
-	camera_controller = freya.new_camera_controller(ASPECT_RATIO)
+	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
 
 	{ 	// Initialize shaders
-		shader = freya.shader_new(
+		shader = renderer.shader_new(
 			#load("../shaders/vertex.glsl"),
 			#load("../shaders/fragment.glsl"),
 		)
 
-		grid_shader = freya.shader_new(
+		grid_shader = renderer.shader_new(
 			#load("../shaders/grid_vert.glsl"),
 			#load("../shaders/grid_frag.glsl"),
 		)
 
-		light_bulb_shader = freya.shader_new(
+		light_bulb_shader = renderer.shader_new(
 			#load("../shaders/light_bulb_vert.glsl"),
 			#load("../shaders/light_bulb_frag.glsl"),
 		)
 	}
 
 	{ 	// Iniziale model and cube
-		model = freya.model_new(
+		model = renderer.model_new(
 			"assets/models/backpack/backpack.obj", // "assets/models/train/Models/OBJ format/train-electric-bullet-a.obj",
 		)
 
-		textures: []freya.TextureHandle = {
-			freya.resource_manager_add(
+		textures: []renderer.TextureHandle = {
+			renderer.resource_manager_add(
 				"assets/textures/container2.png",
-				freya.TextureType.Diffuse,
+				renderer.TextureType.Diffuse,
 			),
-			freya.resource_manager_add(
+			renderer.resource_manager_add(
 				"assets/textures/container2_specular.png",
-				freya.TextureType.Specular,
+				renderer.TextureType.Specular,
 			),
 		}
-		cube = freya.new_cube_mesh(textures)
+		cube = renderer.new_cube_mesh(textures)
 	}
 
 	{ 	// Initialize light bulbs
-		light_cube = freya.new_cube_mesh(nil)
+		light_cube = renderer.new_cube_mesh(nil)
 	}
 }
 
 shutdown :: proc() {
-	freya.shader_delete(shader)
-	freya.shader_delete(grid_shader)
-	freya.shader_delete(light_bulb_shader)
+	renderer.shader_delete(shader)
+	renderer.shader_delete(grid_shader)
+	renderer.shader_delete(light_bulb_shader)
 
-	freya.model_free(model)
-	freya.mesh_free(cube)
-	freya.mesh_free(light_cube)
+	renderer.model_free(model)
+	renderer.mesh_free(cube)
+	renderer.mesh_free(light_cube)
 
 	time.stopwatch_stop(&stop_watch)
 }
@@ -150,73 +151,77 @@ update :: proc(dt: f64) {
 	}
 
 	{
-		freya.camera_on_update(&camera_controller, dt)
+		engine.camera_on_update(&camera_controller, dt)
 	}
 }
 
 draw :: proc() {
-	freya.clear_screen({0.2, 0.2, 0.2, 1.0})
+	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
 
 	{ 	// Light bulb
-		freya.shader_use(light_bulb_shader)
-		freya.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
-		freya.shader_set_uniform(shader, "view", &camera_controller.view_mat)
+		renderer.shader_use(light_bulb_shader)
+		renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
+		renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
 
 		for light in POINT_LIGHTS {
 			model_transform := glm.mat4Translate(light.position) * glm.mat4Scale({0.1, 0.1, 0.1})
-			freya.shader_set_uniform(light_bulb_shader, "model", &model_transform)
-			freya.mesh_draw(light_cube, light_bulb_shader)
+			renderer.shader_set_uniform(light_bulb_shader, "model", &model_transform)
+			renderer.mesh_draw(light_cube, light_bulb_shader)
 		}
 	}
 
 	{ 	// Setup & draw cube
 		model_transform := glm.mat4(1.0) //* glm.mat4Translate({0.0, 3, 0.0})
 
-		freya.shader_use(shader)
-		freya.shader_set_uniform(shader, "view_pos", &camera_controller._position)
+		renderer.shader_use(shader)
+		renderer.shader_set_uniform(shader, "view_pos", &camera_controller._position)
 
 		{ 	// Set lights parameters
-			freya.shader_set_uniform(shader, "directional_light.direction", &DIR_LIGHT.direction)
-			freya.shader_set_uniform(shader, "directional_light.ambient", &DIR_LIGHT.diffuse)
-			freya.shader_set_uniform(shader, "directional_light.diffuse", &DIR_LIGHT.ambient)
-			freya.shader_set_uniform(shader, "directional_light.specular", &DIR_LIGHT.specular)
+			renderer.shader_set_uniform(
+				shader,
+				"directional_light.direction",
+				&DIR_LIGHT.direction,
+			)
+			renderer.shader_set_uniform(shader, "directional_light.ambient", &DIR_LIGHT.diffuse)
+			renderer.shader_set_uniform(shader, "directional_light.diffuse", &DIR_LIGHT.ambient)
+			renderer.shader_set_uniform(shader, "directional_light.specular", &DIR_LIGHT.specular)
 
 			for &light, idx in POINT_LIGHTS {
 				buf: [4]u8
 				str_idx := strconv.itoa(buf[:], idx)
 				prefix := strings.concatenate({"point_lights[", str_idx, "]"})
 
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".position"}),
 					&light.position,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".ambient"}),
 					&light.ambient,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".diffuse"}),
 					&light.diffuse,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".specular"}),
 					&light.specular,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".constant"}),
 					light.constant,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".linear"}),
 					light.linear,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".quadratic"}),
 					light.quadratic,
@@ -225,62 +230,66 @@ draw :: proc() {
 		}
 
 		// Set Material
-		freya.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
+		renderer.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
 
-		freya.shader_set_uniform(shader, "model", &model_transform)
-		freya.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
-		freya.shader_set_uniform(shader, "view", &camera_controller.view_mat)
-		freya.mesh_draw(cube, shader)
+		renderer.shader_set_uniform(shader, "model", &model_transform)
+		renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
+		renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
+		renderer.mesh_draw(cube, shader)
 	}
 
 	{ 	// Setup model matrix && submit data to draw
 		model_transform := glm.mat4Translate({5, 3, 5}) //* glm.mat4Scale({100, 100, 100})
 
-		freya.shader_use(shader)
-		freya.shader_set_uniform(shader, "view_pos", &camera_controller._position)
+		renderer.shader_use(shader)
+		renderer.shader_set_uniform(shader, "view_pos", &camera_controller._position)
 
 		{ 	// Set lights parameters
-			freya.shader_set_uniform(shader, "directional_light.direction", &DIR_LIGHT.direction)
-			freya.shader_set_uniform(shader, "directional_light.ambient", &DIR_LIGHT.diffuse)
-			freya.shader_set_uniform(shader, "directional_light.diffuse", &DIR_LIGHT.ambient)
-			freya.shader_set_uniform(shader, "directional_light.specular", &DIR_LIGHT.specular)
+			renderer.shader_set_uniform(
+				shader,
+				"directional_light.direction",
+				&DIR_LIGHT.direction,
+			)
+			renderer.shader_set_uniform(shader, "directional_light.ambient", &DIR_LIGHT.diffuse)
+			renderer.shader_set_uniform(shader, "directional_light.diffuse", &DIR_LIGHT.ambient)
+			renderer.shader_set_uniform(shader, "directional_light.specular", &DIR_LIGHT.specular)
 
 			for &light, idx in POINT_LIGHTS {
 				buf: [4]u8
 				str_idx := strconv.itoa(buf[:], idx)
 				prefix := strings.concatenate({"point_lights[", str_idx, "]"})
 
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".position"}),
 					&light.position,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".ambient"}),
 					&light.ambient,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".diffuse"}),
 					&light.diffuse,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".specular"}),
 					&light.specular,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".constant"}),
 					light.constant,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".linear"}),
 					light.linear,
 				)
-				freya.shader_set_uniform(
+				renderer.shader_set_uniform(
 					shader,
 					strings.concatenate({prefix, ".quadratic"}),
 					light.quadratic,
@@ -289,39 +298,41 @@ draw :: proc() {
 		}
 
 		// Set Material
-		freya.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
+		renderer.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
 
-		freya.shader_set_uniform(shader, "model", &model_transform)
-		freya.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
-		freya.shader_set_uniform(shader, "view", &camera_controller.view_mat)
-		freya.model_draw(model, shader)
+		renderer.shader_set_uniform(shader, "model", &model_transform)
+		renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
+		renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
+		renderer.model_draw(model, shader)
 	}
 
 	{ 	// Draw grid
-		freya.shader_use(grid_shader)
-		freya.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
-		freya.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
-		freya.draw_grid()
+		renderer.shader_use(grid_shader)
+		renderer.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
+		renderer.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
+		renderer.draw_grid()
 	}
 }
 
-on_event :: proc(ev: freya.Event) {
+on_event :: proc(ev: engine.Event) {
 	#partial switch e in ev {
-	case freya.WindowResizeEvent:
+	case engine.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
 		}
 	}
 
-	freya.camera_on_event(&camera_controller, ev)
+	engine.camera_on_event(&camera_controller, ev)
 }
 
 main :: proc() {
-	freya.start_engine(freya.Game {
-		init     = initialize,
-		shutdown = shutdown,
-		update   = update,
-		draw     = draw,
-		on_event = on_event,
-	})
+	freya.start_engine(
+		freya.Game {
+			init = initialize,
+			shutdown = shutdown,
+			update = update,
+			draw = draw,
+			on_event = on_event,
+		},
+	)
 }

@@ -38,7 +38,7 @@ event_callback :: proc(ev: engn.Event) {
 
 @(export)
 start_engine :: proc(game: Game) {
-    GAME = game
+	GAME = game
 
 	logger := log.create_console_logger()
 	context.logger = logger

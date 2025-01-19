@@ -2,6 +2,8 @@ package engine
 
 import "core:log"
 
+import "base:runtime"
+
 import "vendor:glfw"
 
 WINDOW: Window
@@ -47,6 +49,8 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 	glfw.SetWindowUserPointer(window, rawptr(props))
 
 	glfw.SetWindowSizeCallback(window, proc "c" (window: glfw.WindowHandle, w, h: i32) {
+		context = runtime.default_context()
+
 		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 		props.width = w
 		props.height = h
@@ -60,6 +64,8 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 	glfw.SetKeyCallback(
 		window,
 		proc "c" (window: glfw.WindowHandle, key, scancode, action, mods: i32) {
+			context = runtime.default_context()
+
 			props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 			switch (action) {
 			case glfw.REPEAT:
@@ -75,6 +81,8 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 	glfw.SetMouseButtonCallback(
 		window,
 		proc "c" (window: glfw.WindowHandle, button, action, mods: i32) {
+			context = runtime.default_context()
+
 			props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 			switch (action) {
 			case glfw.PRESS:
@@ -86,11 +94,15 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 	)
 
 	glfw.SetScrollCallback(window, proc "c" (window: glfw.WindowHandle, x, y: f64) {
+		context = runtime.default_context()
+
 		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 		props.event_callback(MouseScrollEvent{f32(x), f32(y)})
 	})
 
 	glfw.SetCursorPosCallback(window, proc "c" (window: glfw.WindowHandle, x, y: f64) {
+		context = runtime.default_context()
+
 		props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
 		props.event_callback(MouseMoveEvent{f32(x), f32(y)})
 	})
