@@ -194,15 +194,14 @@ update :: proc(dt: f64) {
 }
 
 draw :: proc() {
-	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
+	renderer.clear_screen({0.0, 0.0, 0.0, 1.0})
+
 	{ 	// Draw imgui
 		im.NewFrame()
 		im.Begin("Scene")
 
 		win_width := im.GetContentRegionAvail().x
 		win_height := im.GetContentRegionAvail().y
-
-		// TODO: Rescale framebuffer
 
 		im.Text("pointer = %x", &viewport_fb.texture.id)
 		im.Text("size = %d x %d", win_width, win_height)
@@ -385,6 +384,7 @@ on_event :: proc(ev: engine.Event) {
 	case engine.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
+			renderer.framebuffer_rescale(viewport_fb, e.width, e.height)
 		}
 	}
 

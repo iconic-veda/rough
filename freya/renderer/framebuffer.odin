@@ -7,6 +7,7 @@ FrameBuffer :: struct {
 	attachments:   []FrameBufferAttachment,
 	width, height: i32,
 	texture:       ^Texture,
+	rbo:           u32,
 }
 
 FrameBufferAttachment :: enum {
@@ -38,8 +39,24 @@ framebuffer_new :: proc(width, height: i32, types: []FrameBufferAttachment) -> ^
 	return fbo
 }
 
-framebuffer_rescale :: proc() {
-	// TODO
+framebuffer_rescale :: proc(fbo: ^FrameBuffer, width, height: i32) {
+	fbo.width = width
+	fbo.height = height
+
+	gl.BindTexture(gl.TEXTURE_2D, fbo.texture.id)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fbo.texture.id, 0)
+
+	gl.BindRenderbuffer(gl.RENDERBUFFER, fbo.rbo)
+	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, width, height)
+	gl.FramebufferRenderbuffer(
+		gl.FRAMEBUFFER,
+		gl.DEPTH_STENCIL_ATTACHMENT,
+		gl.RENDERBUFFER,
+		fbo.rbo,
+	)
 }
 
 framebuffer_bind :: proc(fbo: ^FrameBuffer) {
@@ -81,6 +98,7 @@ _framebuffer_add_attachment :: proc(fbo: ^FrameBuffer) {
 				gl.RENDERBUFFER,
 				rbo,
 			)
+			fbo.rbo = rbo
 		}
 	}
 }
