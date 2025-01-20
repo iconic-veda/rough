@@ -4,12 +4,17 @@ import freya "../freya"
 import engine "../freya/engine"
 import renderer "../freya/renderer"
 
+import im "../freya/vendor/odin-imgui"
+import "../freya/vendor/odin-imgui/imgui_impl_glfw"
+import "../freya/vendor/odin-imgui/imgui_impl_opengl3"
+
 import "core:strconv"
 import "core:strings"
 import "core:time"
 
 import glm "core:math/linalg/glsl"
 
+DISABLE_DOCKING :: #config(DISABLE_DOCKING, true)
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
 camera_controller: engine.OpenGLCameraController
@@ -22,6 +27,8 @@ cube: ^renderer.Mesh
 model: ^renderer.Model
 
 light_cube: ^renderer.Mesh
+
+viewport_fb: ^renderer.FrameBuffer
 
 
 POINT_LIGHTS: [4]renderer.PointLight = {
@@ -89,7 +96,33 @@ initialize :: proc() {
 		},
 	)
 
+	{ 	// Initialize imgui
+		im.CHECKVERSION()
+		im.CreateContext()
+		io := im.GetIO()
+		io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
+		when !DISABLE_DOCKING {
+			io.ConfigFlags += {.DockingEnable}
+			io.ConfigFlags += {.ViewportsEnable}
+
+			style := im.GetStyle()
+			style.WindowRounding = 0
+			style.Colors[im.Col.WindowBg].w = 1
+		}
+
+		im.StyleColorsDark()
+
+		imgui_impl_glfw.InitForOpenGL(engine.WINDOW.glfw_window, true)
+		imgui_impl_opengl3.Init("#version 460")
+	}
+
 	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
+
+	viewport_fb = renderer.framebuffer_new(
+		800,
+		600,
+		{renderer.FrameBufferAttachment.Color, renderer.FrameBufferAttachment.DepthStencil},
+	)
 
 	{ 	// Initialize shaders
 		shader = renderer.shader_new(
@@ -141,10 +174,22 @@ shutdown :: proc() {
 	renderer.mesh_free(light_cube)
 
 	time.stopwatch_stop(&stop_watch)
+
+	imgui_impl_glfw.Shutdown()
+	imgui_impl_opengl3.Shutdown()
+	im.DestroyContext()
 }
 
 update :: proc(dt: f64) {
 	_ = time.stopwatch_duration(stop_watch)
+
+	{ 	// Update imgui
+		imgui_impl_opengl3.NewFrame()
+		imgui_impl_glfw.NewFrame()
+		im.NewFrame()
+
+		im.ShowDemoWindow()
+	}
 
 	{
 		theta += f32(dt)
@@ -158,6 +203,7 @@ update :: proc(dt: f64) {
 draw :: proc() {
 	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
 
+	// renderer.framebuffer_bind(viewport_fb)
 	{ 	// Light bulb
 		renderer.shader_use(light_bulb_shader)
 		renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
@@ -311,6 +357,17 @@ draw :: proc() {
 		renderer.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
 		renderer.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
 		renderer.draw_grid()
+	}
+	// renderer.framebuffer_unbind()
+
+	{ 	// Draw imgui
+		im.Render()
+		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
+
+		when !DISABLE_DOCKING {
+			im.UpdatePlatformWindows()
+			im.RenderPlatformWindowsDefault()
+		}
 	}
 }
 

@@ -51,11 +51,32 @@ texture_new :: proc(file_path: string, type: TextureType) -> ^Texture {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+
 
 	tex := new(Texture)
 	tex.id = texture
 	tex.type = type
 	tex.path = file_path[:]
+
+	return tex
+}
+
+@(export)
+texture_new_empty :: proc(width: i32, height: i32) -> ^Texture {
+	texture: u32 = 0
+	gl.GenTextures(1, &texture)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+	tex := new(Texture)
+	tex.id = texture
+	// tex.type = type
+	tex.path = ""
 
 	return tex
 }
