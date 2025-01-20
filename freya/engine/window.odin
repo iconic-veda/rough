@@ -57,6 +57,16 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 		props.event_callback(WindowResizeEvent{w, h})
 	})
 
+	// glfw.SetFramebufferSizeCallback(window, proc "c" (window: glfw.WindowHandle, w, h: i32) {
+	// 	context = runtime.default_context()
+
+	// 	props := cast(^WindowProperties)glfw.GetWindowUserPointer(window)
+	// 	props.width = w
+	// 	props.height = h
+	// 	props.event_callback(WindowResizeEvent{w, h})
+	// })
+
+
 	glfw.SetWindowCloseCallback(window, proc "c" (window: glfw.WindowHandle) {
 		glfw.SetWindowShouldClose(window, glfw.TRUE)
 	})

@@ -30,6 +30,8 @@ light_cube: ^renderer.Mesh
 
 viewport_fb: ^renderer.FrameBuffer
 
+imgui_io: ^im.IO
+
 
 POINT_LIGHTS: [4]renderer.PointLight = {
 	{
@@ -99,21 +101,13 @@ initialize :: proc() {
 	{ 	// Initialize imgui
 		im.CHECKVERSION()
 		im.CreateContext()
-		io := im.GetIO()
-		io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-		when !DISABLE_DOCKING {
-			io.ConfigFlags += {.DockingEnable}
-			io.ConfigFlags += {.ViewportsEnable}
-
-			style := im.GetStyle()
-			style.WindowRounding = 0
-			style.Colors[im.Col.WindowBg].w = 1
-		}
+		imgui_io = im.GetIO()
+		imgui_io.ConfigFlags += {.NavEnableKeyboard}
 
 		im.StyleColorsDark()
 
 		imgui_impl_glfw.InitForOpenGL(engine.WINDOW.glfw_window, true)
-		imgui_impl_opengl3.Init("#version 460")
+		imgui_impl_opengl3.Init()
 	}
 
 	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
@@ -175,6 +169,8 @@ shutdown :: proc() {
 
 	time.stopwatch_stop(&stop_watch)
 
+	renderer.framebuffer_free(viewport_fb)
+
 	imgui_impl_glfw.Shutdown()
 	imgui_impl_opengl3.Shutdown()
 	im.DestroyContext()
@@ -186,9 +182,6 @@ update :: proc(dt: f64) {
 	{ 	// Update imgui
 		imgui_impl_opengl3.NewFrame()
 		imgui_impl_glfw.NewFrame()
-		im.NewFrame()
-
-		im.ShowDemoWindow()
 	}
 
 	{
@@ -202,8 +195,32 @@ update :: proc(dt: f64) {
 
 draw :: proc() {
 	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
+	{ 	// Draw imgui
+		im.NewFrame()
+		im.Begin("Scene")
 
-	// renderer.framebuffer_bind(viewport_fb)
+		win_width := im.GetContentRegionAvail().x
+		win_height := im.GetContentRegionAvail().y
+
+		// TODO: Rescale framebuffer
+
+		im.Text("pointer = %x", &viewport_fb.texture.id)
+		im.Text("size = %d x %d", win_width, win_height)
+
+		im.Image(
+			im.TextureID(uintptr(viewport_fb.texture.id)),
+			im.Vec2{win_width, win_height},
+			im.Vec2{0, 1},
+			im.Vec2{1, 0},
+		)
+
+		im.End()
+		im.Render()
+	}
+
+
+	renderer.framebuffer_bind(viewport_fb)
+	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
 	{ 	// Light bulb
 		renderer.shader_use(light_bulb_shader)
 		renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
@@ -358,17 +375,9 @@ draw :: proc() {
 		renderer.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
 		renderer.draw_grid()
 	}
-	// renderer.framebuffer_unbind()
+	renderer.framebuffer_unbind()
 
-	{ 	// Draw imgui
-		im.Render()
-		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
-
-		when !DISABLE_DOCKING {
-			im.UpdatePlatformWindows()
-			im.RenderPlatformWindowsDefault()
-		}
-	}
+	imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
 }
 
 on_event :: proc(ev: engine.Event) {
