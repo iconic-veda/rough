@@ -12,7 +12,7 @@ What you need to have to build the project:
 
 Before trying to build the project, make sure the submodules are cloned, either clone the repo with the following command:
 
-````sh
+```sh
 git clone --recurse-submodules git@github.com:kosmios1/freya.git
 ```
 
@@ -32,4 +32,4 @@ Use the build script from at the root of the repo.
 
 ```sh
 ./build.sh
-````
+```
