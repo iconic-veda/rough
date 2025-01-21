@@ -43,6 +43,8 @@ framebuffer_rescale :: proc(fbo: ^FrameBuffer, width, height: i32) {
 	fbo.width = width
 	fbo.height = height
 
+	gl.BindFramebuffer(gl.FRAMEBUFFER, fbo.id)
+
 	gl.BindTexture(gl.TEXTURE_2D, fbo.texture.id)
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -57,6 +59,10 @@ framebuffer_rescale :: proc(fbo: ^FrameBuffer, width, height: i32) {
 		gl.RENDERBUFFER,
 		fbo.rbo,
 	)
+
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
 }
 
 framebuffer_bind :: proc(fbo: ^FrameBuffer) {

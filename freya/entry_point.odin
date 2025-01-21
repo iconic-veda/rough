@@ -49,8 +49,6 @@ start_engine :: proc(game: Game) {
 
 	rndr.initialize_context()
 
-	// engn.window_toggle_cursor(&engn.WINDOW)
-
 	rndr.resource_manager_new()
 	defer rndr.resource_manager_free()
 

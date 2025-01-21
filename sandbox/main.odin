@@ -14,7 +14,7 @@ import "core:time"
 
 import glm "core:math/linalg/glsl"
 
-DISABLE_DOCKING :: #config(DISABLE_DOCKING, true)
+DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
 camera_controller: engine.OpenGLCameraController
@@ -29,8 +29,6 @@ model: ^renderer.Model
 light_cube: ^renderer.Mesh
 
 viewport_fb: ^renderer.FrameBuffer
-
-imgui_io: ^im.IO
 
 
 POINT_LIGHTS: [4]renderer.PointLight = {
@@ -86,6 +84,9 @@ MATERIAL: renderer.Material = {
 theta: f32 = 0.0
 stop_watch: time.Stopwatch
 
+imgui_io: ^im.IO
+window_flags: im.WindowFlags
+
 initialize :: proc() {
 	time.stopwatch_start(&stop_watch)
 
@@ -103,11 +104,38 @@ initialize :: proc() {
 		im.CreateContext()
 		imgui_io = im.GetIO()
 		imgui_io.ConfigFlags += {.NavEnableKeyboard}
+		when !DISABLE_DOCKING {
+			imgui_io.ConfigFlags += {.DockingEnable}
+			// imgui_io.ConfigFlags += {.ViewportsEnale}
+
+			style := im.GetStyle()
+			style.WindowRounding = 0
+			style.Colors[im.Col.WindowBg].w = 1
+		}
 
 		im.StyleColorsDark()
 
 		imgui_impl_glfw.InitForOpenGL(engine.WINDOW.glfw_window, true)
 		imgui_impl_opengl3.Init()
+
+		window_flags = {
+			im.WindowFlag.MenuBar,
+			im.WindowFlag.NoDocking,
+			im.WindowFlag.NoTitleBar,
+			im.WindowFlag.NoCollapse,
+			im.WindowFlag.NoResize,
+			im.WindowFlag.NoMove,
+			im.WindowFlag.NoBringToFrontOnFocus,
+			im.WindowFlag.NoNavFocus,
+			im.WindowFlag.NoBackground,
+		}
+		// im.WindowFlag.NoBringToFrontOnFocus |
+		// im.WindowFlag.NoNavFocus |
+		// im.WindowFlag.NoBackground |
+		// im.WindowFlag.NoDecoration |
+		// im.WindowFlag.NoSavedSettings |
+		// im.WindowFlag.NoFocusOnAppearing |
+		// im.WindowFlag.NoNav
 	}
 
 	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
@@ -198,13 +226,56 @@ draw :: proc() {
 
 	{ 	// Draw imgui
 		im.NewFrame()
-		im.Begin("Scene")
 
+		when !DISABLE_DOCKING {
+			im.PushStyleVarImVec2(im.StyleVar.WindowPadding, im.Vec2{0, 0})
+
+			im.Begin("DockSpace", nil)
+			im.PopStyleVar()
+
+			dockspace_id := im.GetID("MyDockSpace")
+			dockspace_flags: im.DockNodeFlags = {im.DockNodeFlags.PassthruCentralNode}
+			im.DockSpace(dockspace_id, im.Vec2{0, 0}, dockspace_flags)
+
+			// @(static) first_time: bool = true
+			// if first_time {
+			// 	first_time = false
+			// 	im.Dock
+			// 	im.DockBuilderRemoveNode(dockspace_id)
+			// 	im.DockBuilderAddNode(dockspace_id, im.DockNodeFlags.DockSpace)
+			// 	im.DockBuilderSetNodeSize(dockspace_id, imgui_io.DisplaySize)
+
+			// 	dock_id_left := im.DockBuilderSplitNode(
+			// 		dockspace_id,
+			// 		im.Dir.Left,
+			// 		0.2,
+			// 		nil,
+			// 		&dockspace_id,
+			// 	)
+
+			// 	dock_id_down := im.DockBuilderSplitNode(
+			// 		dockspace_id,
+			// 		im.Dir.Down,
+			// 		0.2,
+			// 		nil,
+			// 		&dockspace_id,
+			// 	)
+
+			// 	im.DockBuilderDockWindow("Down", dock_id_down)
+			// 	im.DockBuilderDockWindow("Left", dock_id_left)
+			// 	im.DockBuilderFinish(dockspace_id)
+			// }
+			im.End()
+		}
+
+		im.Begin("Scene")
 		win_width := im.GetContentRegionAvail().x
 		win_height := im.GetContentRegionAvail().y
 
 		im.Text("pointer = %x", &viewport_fb.texture.id)
 		im.Text("size = %d x %d", win_width, win_height)
+
+		renderer.framebuffer_rescale(viewport_fb, i32(win_width), i32(win_height))
 
 		im.Image(
 			im.TextureID(uintptr(viewport_fb.texture.id)),
@@ -216,7 +287,6 @@ draw :: proc() {
 		im.End()
 		im.Render()
 	}
-
 
 	renderer.framebuffer_bind(viewport_fb)
 	renderer.clear_screen({0.2, 0.2, 0.2, 1.0})
@@ -384,7 +454,13 @@ on_event :: proc(ev: engine.Event) {
 	case engine.WindowResizeEvent:
 		{
 			ASPECT_RATIO = f32(e.width) / f32(e.height)
-			renderer.framebuffer_rescale(viewport_fb, e.width, e.height)
+		}
+
+	case engine.KeyPressEvent:
+		{
+			if e.code == engine.KeyCode.P {
+				engine.window_toggle_cursor(&engine.WINDOW)
+			}
 		}
 	}
 
