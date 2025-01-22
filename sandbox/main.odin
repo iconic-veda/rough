@@ -85,7 +85,6 @@ theta: f32 = 0.0
 stop_watch: time.Stopwatch
 
 imgui_io: ^im.IO
-window_flags: im.WindowFlags
 
 initialize :: proc() {
 	time.stopwatch_start(&stop_watch)
@@ -116,18 +115,6 @@ initialize :: proc() {
 
 		imgui_impl_glfw.InitForOpenGL(engine.WINDOW.glfw_window, true)
 		imgui_impl_opengl3.Init()
-
-		window_flags = {
-			im.WindowFlag.MenuBar,
-			im.WindowFlag.NoDocking,
-			im.WindowFlag.NoTitleBar,
-			im.WindowFlag.NoCollapse,
-			im.WindowFlag.NoResize,
-			im.WindowFlag.NoMove,
-			im.WindowFlag.NoBringToFrontOnFocus,
-			im.WindowFlag.NoNavFocus,
-			im.WindowFlag.NoBackground,
-		}
 	}
 
 	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
@@ -218,19 +205,37 @@ draw :: proc() {
 
 	{ 	// Draw imgui
 		im.NewFrame()
-
 		when !DISABLE_DOCKING {
-			im.PushStyleVarImVec2(im.StyleVar.WindowPadding, im.Vec2{0, 0})
 
-			im.Begin("DockSpace", nil)
-			im.PopStyleVar()
+			viewport := im.GetMainViewport()
+			im.SetNextWindowPos(viewport.WorkPos)
+			im.SetNextWindowSize(viewport.WorkSize)
+			im.SetNextWindowViewport(viewport._ID)
+
+			im.PushStyleVar(im.StyleVar.WindowRounding, 0.0)
+			im.PushStyleVar(im.StyleVar.WindowBorderSize, 0.0)
+
+			window_flags: im.WindowFlags = {
+				im.WindowFlag.NoTitleBar,
+				im.WindowFlag.NoCollapse,
+				im.WindowFlag.NoResize,
+				im.WindowFlag.NoMove,
+				im.WindowFlag.NoBringToFrontOnFocus,
+				im.WindowFlag.NoNavFocus,
+			}
+
+			dockspace_flags: im.DockNodeFlags = {im.DockNodeFlag.PassthruCentralNode}
+
+			im.Begin("DockSpace Demo", nil, window_flags)
+			im.PopStyleVar(2)
 
 			dockspace_id := im.GetID("MyDockSpace")
-			dockspace_flags: im.DockNodeFlags = {im.DockNodeFlags.PassthruCentralNode}
 			im.DockSpace(dockspace_id, im.Vec2{0, 0}, dockspace_flags)
 
 			im.End()
 		}
+
+		im.ShowDemoWindow()
 
 		im.Begin("Scene")
 		win_width := im.GetContentRegionAvail().x
