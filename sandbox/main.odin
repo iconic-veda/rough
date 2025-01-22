@@ -106,7 +106,6 @@ initialize :: proc() {
 		imgui_io.ConfigFlags += {.NavEnableKeyboard}
 		when !DISABLE_DOCKING {
 			imgui_io.ConfigFlags += {.DockingEnable}
-			// imgui_io.ConfigFlags += {.ViewportsEnale}
 
 			style := im.GetStyle()
 			style.WindowRounding = 0
@@ -129,13 +128,6 @@ initialize :: proc() {
 			im.WindowFlag.NoNavFocus,
 			im.WindowFlag.NoBackground,
 		}
-		// im.WindowFlag.NoBringToFrontOnFocus |
-		// im.WindowFlag.NoNavFocus |
-		// im.WindowFlag.NoBackground |
-		// im.WindowFlag.NoDecoration |
-		// im.WindowFlag.NoSavedSettings |
-		// im.WindowFlag.NoFocusOnAppearing |
-		// im.WindowFlag.NoNav
 	}
 
 	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
@@ -237,34 +229,6 @@ draw :: proc() {
 			dockspace_flags: im.DockNodeFlags = {im.DockNodeFlags.PassthruCentralNode}
 			im.DockSpace(dockspace_id, im.Vec2{0, 0}, dockspace_flags)
 
-			// @(static) first_time: bool = true
-			// if first_time {
-			// 	first_time = false
-			// 	im.Dock
-			// 	im.DockBuilderRemoveNode(dockspace_id)
-			// 	im.DockBuilderAddNode(dockspace_id, im.DockNodeFlags.DockSpace)
-			// 	im.DockBuilderSetNodeSize(dockspace_id, imgui_io.DisplaySize)
-
-			// 	dock_id_left := im.DockBuilderSplitNode(
-			// 		dockspace_id,
-			// 		im.Dir.Left,
-			// 		0.2,
-			// 		nil,
-			// 		&dockspace_id,
-			// 	)
-
-			// 	dock_id_down := im.DockBuilderSplitNode(
-			// 		dockspace_id,
-			// 		im.Dir.Down,
-			// 		0.2,
-			// 		nil,
-			// 		&dockspace_id,
-			// 	)
-
-			// 	im.DockBuilderDockWindow("Down", dock_id_down)
-			// 	im.DockBuilderDockWindow("Left", dock_id_left)
-			// 	im.DockBuilderFinish(dockspace_id)
-			// }
 			im.End()
 		}
 

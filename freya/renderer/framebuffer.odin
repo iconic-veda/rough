@@ -67,12 +67,6 @@ framebuffer_rescale :: proc(fbo: ^FrameBuffer, width, height: i32) {
 
 framebuffer_bind :: proc(fbo: ^FrameBuffer) {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, fbo.id)
-
-	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
-		panic("Framebuffer is not complete")
-	}
-
-	gl.Viewport(0, 0, fbo.width, fbo.height)
 }
 
 framebuffer_unbind :: proc() {
