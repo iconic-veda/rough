@@ -8,11 +8,7 @@ import "core:log"
 SHOULD_RUN: bool = true
 
 Game :: struct {
-	init:     proc(),
-	update:   proc(delta_time: f64),
-	draw:     proc(),
-	shutdown: proc(),
-	on_event: proc(ev: engn.Event),
+	layer_stack: ^engn.LayerStack,
 }
 
 GAME: Game
@@ -23,20 +19,12 @@ event_callback :: proc(ev: engn.Event) {
 		{
 			rndr.on_window_resize(e.width, e.height)
 		}
-	case engn.KeyPressEvent:
-		{
-			if e.code == engn.KeyCode.Escape {
-				SHOULD_RUN = false
-				return
-			}
-		}
 	}
 
-	GAME.on_event(ev)
+	engn.layer_stk_propagate_event(GAME.layer_stack, ev)
 }
 
 
-@(export)
 start_engine :: proc(game: Game) {
 	GAME = game
 
@@ -52,7 +40,9 @@ start_engine :: proc(game: Game) {
 	rndr.resource_manager_new()
 	defer rndr.resource_manager_free()
 
-	GAME.init()
+	engn.layer_stk_init_layers(GAME.layer_stack)
+
+	engn.init_imgui()
 
 	last_frame: f64 = 0.0
 	for !engn.window_should_close(&engn.WINDOW) && SHOULD_RUN {
@@ -61,10 +51,17 @@ start_engine :: proc(game: Game) {
 		last_frame = now
 
 		engn.window_poll_events()
-		GAME.update(delta_time)
-		GAME.draw()
+
+		engn.layer_stk_update_layers(GAME.layer_stack, delta_time)
+		engn.layer_stk_render_layers(GAME.layer_stack)
+
+		engn.begin_imgui()
+		engn.layer_stk_render_imgui_layers(GAME.layer_stack)
+		engn.end_imgui()
 
 		engn.window_swapbuffers(&engn.WINDOW)
 	}
-	GAME.shutdown()
+
+	engn.layer_stk_shutdown_layers(GAME.layer_stack)
+	engn.shutdown_imgui()
 }

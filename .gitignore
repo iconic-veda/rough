@@ -16,6 +16,12 @@
 !sandbox/**/*.odin
 !sandbox/*.odin
 
+
+!animagik/
+!animagik/**
+!animagik/**/*.odin
+!animagik/*.odin
+
 !shaders/
 !shaders/*.glsl
 
