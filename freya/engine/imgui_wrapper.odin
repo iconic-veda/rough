@@ -20,7 +20,8 @@ init_imgui :: proc() {
 	}
 
 	// im.StyleColorsDark()
-	setup_custom_theme()
+	// setup_custom_theme()
+	im.StyleColorsLight()
 
 	imgui_impl_glfw.InitForOpenGL(WINDOW.glfw_window, true)
 	imgui_impl_opengl3.Init()
