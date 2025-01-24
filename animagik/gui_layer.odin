@@ -126,6 +126,16 @@ initialize :: proc() {
 		ent := ecs.add_entity(entities_world)
 		model_component := renderer.model_new("assets/models/backpack/backpack.obj")
 		ecs.add_component(entities_world, ent, model_component)
+		ecs.add_component(
+			entities_world,
+			ent,
+			engine.Transform {
+				glm.vec3{0.0, 0.0, 0.0},
+				glm.vec3{0.0, 0.0, 0.0},
+				glm.vec3{1.0, 1.0, 1.0},
+				glm.mat4Translate({0.0, 0.0, 0.0}),
+			},
+		)
 	}
 
 	{ 	// Gui panels
@@ -166,7 +176,11 @@ render :: proc() {
 	renderer.clear_screen({0.1, 0.1, 0.1, 1.0})
 
 	{ 	// Render models
-		for archetype in ecs.query(entities_world, ecs.has(^renderer.Model)) {
+		for archetype in ecs.query(
+			entities_world,
+			ecs.has(^renderer.Model),
+			ecs.has(engine.Transform),
+		) {
 			for eid, _ in archetype.entities {
 				model := ecs.get_component_cast(
 					entities_world,
@@ -175,7 +189,12 @@ render :: proc() {
 					^renderer.Model,
 				)
 
-				model_transform := glm.mat4Translate({0, 5, 0})
+				transform := ecs.get_component_cast(
+					entities_world,
+					eid,
+					engine.Transform,
+					engine.Transform,
+				)
 
 				renderer.shader_use(shader)
 				renderer.shader_set_uniform(shader, "view_pos", &camera_controller._position)
@@ -246,7 +265,7 @@ render :: proc() {
 				}
 
 				renderer.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
-				renderer.shader_set_uniform(shader, "model", &model_transform)
+				renderer.shader_set_uniform(shader, "model", &transform.model_matrix)
 				renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
 				renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
 				renderer.model_draw(model, shader)
