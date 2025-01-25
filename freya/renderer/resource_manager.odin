@@ -3,7 +3,7 @@ package renderer
 import "core:crypto/hash"
 import "core:log"
 
-@(private)
+// @(private)
 RESOURCE_MANAGER: ^ResourceManager = nil
 
 Handle :: #type string

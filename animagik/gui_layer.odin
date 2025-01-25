@@ -21,6 +21,7 @@ grid_shader: renderer.ShaderProgram
 viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
+assets_panel: ^gui_panels.AssetsPanel
 
 entities_world: ^ecs.World
 
@@ -140,6 +141,7 @@ initialize :: proc() {
 
 	{ 	// Gui panels
 		scene_panel = gui_panels.scene_panel_new(entities_world)
+		assets_panel = gui_panels.assets_panel_new(renderer.RESOURCE_MANAGER)
 	}
 }
 
@@ -156,6 +158,7 @@ shutdown :: proc() {
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_destroy(scene_panel)
+		gui_panels.assets_panel_destroy(assets_panel)
 	}
 }
 
@@ -339,6 +342,7 @@ imgui_render :: proc() {
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
+		gui_panels.assets_panel_render(assets_panel)
 	}
 }
 
