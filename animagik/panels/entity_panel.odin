@@ -30,6 +30,9 @@ scene_panel_destroy :: proc(panel: ^ScenePanel) {
 }
 
 scene_panel_render :: proc(panel: ^ScenePanel) {
+	im.Begin("Default entities")
+	im.End()
+
 	im.Begin("Entities")
 	for _, archetype in panel.entities_world.archetypes {
 		for entity_index, index in archetype.entities {

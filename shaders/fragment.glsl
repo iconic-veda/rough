@@ -46,14 +46,16 @@ vec3 calculate_point_light(PointLight light, vec3 norm, vec3 frag_pos, vec3 view
 void main()
 {
     vec3 norm = normalize(frag_normal);
-    vec3 view_dir = normalize(view_pos - frag_pos);
+    // TODO: Activate lighting when the renderer is ready
+    // vec3 view_dir = normalize(view_pos - frag_pos);
 
-    vec3 result = calculate_directional_light(directional_light, norm, view_dir);
-    for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
-        result += calculate_point_light(point_lights[i], norm, frag_pos, view_dir);
-    }
+    // vec3 result = calculate_directional_light(directional_light, norm, view_dir);
+    // for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
+    //     result += calculate_point_light(point_lights[i], norm, frag_pos, view_dir);
+    // }
 
-    FragColor = vec4(result, 1.0);
+    // FragColor = vec4(result, 1.0);
+    FragColor = vec4(vec3(texture(material.diffuse, frag_tex_coord)), 1.0);
 }
 
 vec3 calculate_directional_light(DirectionalLight light, vec3 normal, vec3 view_dir) {

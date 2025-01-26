@@ -7,8 +7,6 @@ import engine "../freya/engine"
 import renderer "../freya/renderer"
 
 import glm "core:math/linalg/glsl"
-import "core:strconv"
-import "core:strings"
 
 import ecs "../freya/vendor/YggECS"
 import im "../freya/vendor/odin-imgui"
@@ -27,52 +25,6 @@ entities_world: ^ecs.World
 
 MATERIAL: renderer.Material = {
 	shininess = 120.0,
-}
-
-DIR_LIGHT: renderer.DirectionalLight = {
-	direction = {-0.2, -1.0, -0.3},
-	ambient   = {0.05, 0.05, 0.05},
-	diffuse   = {0.4, 0.4, 0.4},
-	specular  = {0.5, 0.5, 0.5},
-}
-
-POINT_LIGHTS: [4]renderer.PointLight = {
-	{
-		position = {0.7, 0.2, 2.0},
-		ambient = {0.05, 0.05, 0.05},
-		diffuse = {0.8, 0.8, 0.8},
-		specular = {1.0, 1.0, 1.0},
-		constant = 1.0,
-		linear = 0.09,
-		quadratic = 0.032,
-	},
-	{
-		position = {2.3, -3.3, -4.0},
-		ambient = {0.05, 0.05, 0.05},
-		diffuse = {0.8, 0.8, 0.8},
-		specular = {1.0, 1.0, 1.0},
-		constant = 1.0,
-		linear = 0.09,
-		quadratic = 0.032,
-	},
-	{
-		position = {-4.0, 2.0, -12.0},
-		ambient = {0.05, 0.05, 0.05},
-		diffuse = {0.8, 0.8, 0.8},
-		specular = {1.0, 1.0, 1.0},
-		constant = 1.0,
-		linear = 0.09,
-		quadratic = 0.032,
-	},
-	{
-		position = {0.0, 0.0, -3.0},
-		ambient = {0.05, 0.05, 0.05},
-		diffuse = {0.8, 0.8, 0.8},
-		specular = {1.0, 1.0, 1.0},
-		constant = 1.0,
-		linear = 0.09,
-		quadratic = 0.032,
-	},
 }
 
 GuiLayer :: struct {
@@ -200,77 +152,14 @@ render :: proc() {
 				)
 
 				renderer.shader_use(shader)
+
 				renderer.shader_set_uniform(shader, "view_pos", &camera_controller._position)
-
-				{ 	// Set lights parameters
-					renderer.shader_set_uniform(
-						shader,
-						"directional_light.direction",
-						&DIR_LIGHT.direction,
-					)
-					renderer.shader_set_uniform(
-						shader,
-						"directional_light.ambient",
-						&DIR_LIGHT.diffuse,
-					)
-					renderer.shader_set_uniform(
-						shader,
-						"directional_light.diffuse",
-						&DIR_LIGHT.ambient,
-					)
-					renderer.shader_set_uniform(
-						shader,
-						"directional_light.specular",
-						&DIR_LIGHT.specular,
-					)
-
-					for &light, idx in POINT_LIGHTS {
-						buf: [4]u8
-						str_idx := strconv.itoa(buf[:], idx)
-						prefix := strings.concatenate({"point_lights[", str_idx, "]"})
-
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".position"}),
-							&light.position,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".ambient"}),
-							&light.ambient,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".diffuse"}),
-							&light.diffuse,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".specular"}),
-							&light.specular,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".constant"}),
-							light.constant,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".linear"}),
-							light.linear,
-						)
-						renderer.shader_set_uniform(
-							shader,
-							strings.concatenate({prefix, ".quadratic"}),
-							light.quadratic,
-						)
-					}
-				}
-
 				renderer.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
+
 				renderer.shader_set_uniform(shader, "model", &transform.model_matrix)
 				renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
 				renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
+
 				renderer.model_draw(model, shader)
 			}
 		}
