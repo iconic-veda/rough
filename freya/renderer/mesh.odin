@@ -9,21 +9,6 @@ Material :: struct {
 	shininess: f32,
 }
 
-Light :: struct {
-	ambient, diffuse, specular: glm.vec3,
-}
-
-PointLight :: struct {
-	using light:                 Light,
-	position:                    glm.vec3,
-	constant, linear, quadratic: f32,
-}
-
-DirectionalLight :: struct {
-	using light: Light,
-	direction:   glm.vec3,
-}
-
 Vertex :: struct {
 	position:   glm.vec3,
 	normal:     glm.vec3,
@@ -82,6 +67,10 @@ mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 			name = "material.diffuse"
 		case TextureType.Specular:
 			name = "material.specular"
+		case TextureType.Normal:
+			name = "material.normal"
+		case TextureType.Height:
+			name = "material.height"
 		}
 
 		shader_set_uniform(shader, name, i32(idx))

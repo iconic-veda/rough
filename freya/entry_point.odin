@@ -40,6 +40,9 @@ start_engine :: proc(game: Game) {
 	rndr.resource_manager_new()
 	defer rndr.resource_manager_free()
 
+	rndr.renderer_initialize()
+	defer rndr.renderer_shutdown()
+
 	engn.layer_stk_init_layers(GAME.layer_stack)
 
 	engn.init_imgui()

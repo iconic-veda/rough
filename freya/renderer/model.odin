@@ -112,6 +112,16 @@ model_new :: proc(file_path: string) -> ^Model {
 								texture_path,
 								TextureType.Specular,
 							)
+						case assimp.TextureType.NORMALS:
+							textures[texture_idx] = resource_manager_add(
+								texture_path,
+								TextureType.Normal,
+							)
+						case assimp.TextureType.HEIGHT:
+							textures[texture_idx] = resource_manager_add(
+								texture_path,
+								TextureType.Height,
+							)
 						case:
 							log.fatal("Texture type not supported", type)
 						}
@@ -125,10 +135,21 @@ model_new :: proc(file_path: string) -> ^Model {
 					assimp.TextureType.SPECULAR,
 					base_path,
 				)
+				textures_normals := load_textures(material, assimp.TextureType.NORMALS, base_path)
+				textures_height := load_textures(material, assimp.TextureType.HEIGHT, base_path)
 
-				textures = make([]TextureHandle, len(textures_diffuse) + len(textures_specular))
+
+				textures = make(
+					[]TextureHandle,
+					len(textures_diffuse) +
+					len(textures_specular) +
+					len(textures_normals) +
+					len(textures_height),
+				)
 				copy(textures, textures_diffuse)
 				copy(textures[len(textures_diffuse):], textures_specular)
+				copy(textures[len(textures_specular)+len(textures_diffuse):], textures_normals)
+				copy(textures[len(textures_specular)+len(textures_diffuse)+len(textures_normals):], textures_height)
 			}
 			append(&model.meshes, mesh_new(vertices, indices, textures))
 		}

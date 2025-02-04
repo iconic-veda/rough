@@ -3,7 +3,7 @@ package renderer
 import "core:crypto/hash"
 import "core:log"
 
-// @(private)
+// @(private) // TODO: Make this private
 RESOURCE_MANAGER: ^ResourceManager = nil
 
 Handle :: #type string
@@ -85,4 +85,8 @@ resource_manager_free :: proc() {
 	free(RESOURCE_MANAGER)
 
 	RESOURCE_MANAGER = nil
+}
+
+resource_manager_get_textures :: proc() -> map[TextureHandle]^Texture {
+	return RESOURCE_MANAGER.textures
 }

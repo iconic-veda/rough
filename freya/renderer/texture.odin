@@ -15,8 +15,9 @@ Texture :: struct {
 TextureType :: enum {
 	Diffuse,
 	Specular,
+	Normal,
+	Height,
 }
-
 @(export)
 texture_new :: proc(file_path: string, type: TextureType) -> ^Texture {
 	filename := strings.unsafe_string_to_cstring(file_path)

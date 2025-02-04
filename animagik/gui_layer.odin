@@ -14,12 +14,9 @@ import im "../freya/vendor/odin-imgui"
 ASPECT_RATIO: f32 = 800.0 / 600.0
 
 camera_controller: engine.OpenGLCameraController
-shader: renderer.ShaderProgram
-grid_shader: renderer.ShaderProgram
 viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
-assets_panel: ^gui_panels.AssetsPanel
 
 entities_world: ^ecs.World
 
@@ -61,46 +58,50 @@ initialize :: proc() {
 		{renderer.FrameBufferAttachment.Color, renderer.FrameBufferAttachment.DepthStencil},
 	)
 
-	{ 	// Initialize shaders
-		shader = renderer.shader_new(
-			#load("../shaders/vertex.glsl"),
-			#load("../shaders/fragment.glsl"),
-		)
-
-		grid_shader = renderer.shader_new(
-			#load("../shaders/grid_vert.glsl"),
-			#load("../shaders/grid_frag.glsl"),
-		)
-	}
-
 	entities_world = ecs.new_world()
-
 	{ 	// TODO: Remove this code, only to try gui
-		ent := ecs.add_entity(entities_world)
-		model_component := renderer.model_new("assets/models/backpack/backpack.obj")
-		ecs.add_component(entities_world, ent, model_component)
-		ecs.add_component(
-			entities_world,
-			ent,
-			engine.Transform {
-				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{1.0, 1.0, 1.0},
-				glm.mat4Translate({0.0, 0.0, 0.0}),
-			},
-		)
+		{
+			ent := ecs.add_entity(entities_world)
+			model_component := renderer.model_new("assets/models/vampire/dancing_vampire.dae")
+			ecs.add_component(entities_world, ent, model_component)
+			ecs.add_component(
+				entities_world,
+				ent,
+				engine.Transform {
+					glm.vec3{0.0, 0.0, 0.0},
+					glm.vec3{0.0, 0.0, 0.0},
+					glm.vec3{1.0, 1.0, 1.0},
+					glm.mat4Translate({0.0, 0.0, 0.0}),
+				},
+			)
+			ecs.add_component(entities_world, ent, engine.Name("Vampire"))
+		}
+
+		{
+			ent := ecs.add_entity(entities_world)
+			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
+			ecs.add_component(entities_world, ent, model_component)
+			ecs.add_component(
+				entities_world,
+				ent,
+				engine.Transform {
+					glm.vec3{0.0, 0.0, 0.0},
+					glm.vec3{0.0, 0.0, 0.0},
+					glm.vec3{1.0, 1.0, 1.0},
+					glm.mat4Translate({0.0, 0.0, 0.0}),
+				},
+			)
+			ecs.add_component(entities_world, ent, engine.Name("Backpack"))
+		}
 	}
+
 
 	{ 	// Gui panels
 		scene_panel = gui_panels.scene_panel_new(entities_world)
-		assets_panel = gui_panels.assets_panel_new(renderer.RESOURCE_MANAGER)
 	}
 }
 
 shutdown :: proc() {
-	renderer.shader_delete(shader)
-	renderer.shader_delete(grid_shader)
-
 	renderer.framebuffer_free(viewport_fb)
 
 	{ 	// Clear entities world
@@ -110,19 +111,13 @@ shutdown :: proc() {
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_destroy(scene_panel)
-		gui_panels.assets_panel_destroy(assets_panel)
 	}
 }
 
 update :: proc(dt: f64) {
-	{
-		// TODO: Update entities
-	}
 
-	{
-		if engine.is_button_pressed(engine.MouseButton.ButtonMiddle) {
-			engine.camera_on_update(&camera_controller, dt)
-		}
+	if engine.is_button_pressed(engine.MouseButton.ButtonMiddle) {
+		engine.camera_on_update(&camera_controller, dt)
 	}
 }
 
@@ -151,26 +146,18 @@ render :: proc() {
 					engine.Transform,
 				)
 
-				renderer.shader_use(shader)
-
-				renderer.shader_set_uniform(shader, "view_pos", &camera_controller._position)
-				renderer.shader_set_uniform(shader, "material.shininess", MATERIAL.shininess)
-
-				renderer.shader_set_uniform(shader, "model", &transform.model_matrix)
-				renderer.shader_set_uniform(shader, "projection", &camera_controller.proj_mat)
-				renderer.shader_set_uniform(shader, "view", &camera_controller.view_mat)
-
-				renderer.model_draw(model, shader)
+				renderer.renderer_draw_model(
+					model,
+					&transform,
+					&camera_controller.view_mat,
+					&camera_controller.proj_mat,
+				)
 			}
 		}
 	}
 
-	{ 	// Draw grid
-		renderer.shader_use(grid_shader)
-		renderer.shader_set_uniform(grid_shader, "view", &camera_controller.view_mat)
-		renderer.shader_set_uniform(grid_shader, "projection", &camera_controller.proj_mat)
-		renderer.draw_grid()
-	}
+	renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
+
 	renderer.framebuffer_unbind()
 }
 
@@ -231,7 +218,6 @@ imgui_render :: proc() {
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
-		gui_panels.assets_panel_render(assets_panel)
 	}
 }
 

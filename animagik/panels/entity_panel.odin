@@ -1,11 +1,10 @@
 package panel
 
-import "core:fmt"
 import "core:math"
-// import "core:strings"
+import "core:strings"
 
 import engine "../../freya/engine"
-import renderer "../../freya/renderer"
+// import renderer "../../freya/renderer"
 
 import ecs "../../freya/vendor/YggECS"
 import im "../../freya/vendor/odin-imgui"
@@ -19,9 +18,7 @@ ScenePanel :: struct {
 
 scene_panel_new :: proc(entities_world: ^ecs.World) -> ^ScenePanel {
 	panel := new(ScenePanel)
-
 	panel.entities_world = entities_world
-
 	return panel
 }
 
@@ -35,89 +32,60 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 
 	im.Begin("Entities")
 	for _, archetype in panel.entities_world.archetypes {
-		for entity_index, index in archetype.entities {
+		for _, index in archetype.entities {
+			entity := archetype.entities[index]
+			if ecs.has_component_type(panel.entities_world, entity, engine.Name) {
+				name := ecs.get_component(panel.entities_world, entity, engine.Name)
+				cname := strings.unsafe_string_to_cstring(name)
+				if im.TreeNode(cname) {
+					if ecs.has_component_type(panel.entities_world, entity, engine.Transform) {
+						if im.TreeNode("Transform") {
+							transform := ecs.get_component(
+								panel.entities_world,
+								entity,
+								engine.Transform,
+							)
 
-			id := fmt.ctprintf("Entity: %v", entity_index)
-			if im.TreeNode(id) {
-				entity := archetype.entities[index]
-				if im.TreeNode("Transform") &&
-				   ecs.has_component_type(panel.entities_world, entity, engine.Transform) {
-					transform := ecs.get_component(
-						panel.entities_world,
-						entity,
-						engine.Transform,
-						engine.Transform,
-					)
+							// Position controls
+							im.Text("Position:")
+							pos_changed := false
+							pos_changed |= im.DragFloat3(
+								"Pos",
+								&transform.position,
+								0.1,
+								-math.F32_MAX,
+								math.F32_MAX,
+							)
 
-					// Position controls
-					im.Text("Position:")
-					pos_changed := false
-					pos_changed |= im.DragFloat3(
-						"Pos",
-						&transform.position,
-						0.1,
-						-math.F32_MAX,
-						math.F32_MAX,
-					)
+							// Rotation controls
+							im.Text("Rotation:")
+							pos_changed |= im.DragFloat3(
+								"Rot",
+								&transform.rotation,
+								0.1,
+								-math.PI,
+								math.PI,
+							)
 
-					// Rotation controls
-					im.Text("Rotation:")
-					pos_changed |= im.DragFloat3(
-						"Rot",
-						&transform.rotation,
-						0.1,
-						-math.PI,
-						math.PI,
-					)
+							// Scale controls
+							im.Text("Scale:")
+							pos_changed |= im.DragFloat3("Scale", &transform.scale, 0.01, 0, 10)
 
-					// Scale controls
-					im.Text("Scale:")
-					pos_changed |= im.DragFloat3("Scale", &transform.scale, 0.01, 0, 10)
-
-					if pos_changed {
-						transform.model_matrix =
-							glm.mat4Translate(transform.position) *
-							glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
-							glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
-							glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
-							glm.mat4Scale(transform.scale)
-						ecs.remove_component(panel.entities_world, entity, engine.Transform)
-						ecs.add_component(panel.entities_world, entity, transform)
+							if pos_changed {
+								transform.model_matrix =
+									glm.mat4Translate(transform.position) *
+									glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
+									glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
+									glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
+									glm.mat4Scale(transform.scale)
+								ecs.add_component(panel.entities_world, entity, transform)
+							}
+							im.TreePop()
+						}
 					}
 					im.TreePop()
 				}
-
-				// List component IDs
-				// for component_id in archetype.component_ids {
-				// 	component_info, ok := panel.entities_world.component_info[component_id]
-				// 	if ok {
-				// 		component_id := fmt.tprintf("Component: %v", component_info.type_info.id)
-				// 		im.Text(strings.unsafe_string_to_cstring(component_id))
-				// 	}
-				// }
-
-				if im.TreeNode("Model") &&
-				   ecs.has_component_type(panel.entities_world, entity, ^renderer.Model) {
-					model := ecs.get_component(
-						panel.entities_world,
-						entity,
-						^renderer.Model,
-						^renderer.Model,
-					)
-
-					// mesh_num := fmt.ctprintf("Mesh: %d", len(model.meshes))
-					// im.Text(mesh_num)
-
-					for _, i in model.meshes {
-						mesh_id := fmt.ctprintf("Mesh: %d", i)
-						im.Text(mesh_id)
-					}
-
-					im.TreePop()
-				}
-				im.TreePop()
 			}
-
 		}
 	}
 	im.End()
