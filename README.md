@@ -7,29 +7,30 @@ What you need to have to build the project:
 - [Odin lang](https://odin-lang.org/)
 - [GLFW3](https://www.glfw.org/)
 - [OpenGL](https://www.opengl.org/)
+- [Assimp](https://assimp.org/)
 
-## How to build
+## Setup
 
-Before trying to build the project, make sure the submodules are cloned, either clone the repo with the following command:
+Clone the repo with the following command:
 
 ```sh
 git clone --recurse-submodules git@github.com:kosmios1/freya.git
 ```
 
-or if you already have the repo cloned, run the following command:
+Then use the following command to setup the project:
 
 ```sh
-git submodule update --init --recursive
+just setup
 ```
 
-After that, go to `freya/vendor/odin-imgui/` and run the following command:
+## Run
+
+Use the following command to run the project:
 
 ```sh
-python build.py
-```
+just run
 
-Use the build script from at the root of the repo.
+# If you want to run in debug mode
 
-```sh
-./build.sh
+just run-dbg
 ```
