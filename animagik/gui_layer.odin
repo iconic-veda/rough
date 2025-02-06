@@ -1,5 +1,7 @@
 package animagik
 
+import "core:fmt"
+
 import gui_panels "panels"
 
 import freya "../freya"
@@ -8,7 +10,7 @@ import renderer "../freya/renderer"
 
 import glm "core:math/linalg/glsl"
 
-import ecs "../freya/vendor/YggECS"
+import ecs "../freya/vendor/odin-ecs"
 import im "../freya/vendor/odin-imgui"
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
@@ -18,11 +20,7 @@ viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
 
-entities_world: ^ecs.World
-
-MATERIAL: renderer.Material = {
-	shininess = 120.0,
-}
+entities_world: ecs.Context
 
 GuiLayer :: struct {
 	using base: engine.Layer,
@@ -58,14 +56,14 @@ initialize :: proc() {
 		{renderer.FrameBufferAttachment.Color, renderer.FrameBufferAttachment.DepthStencil},
 	)
 
-	entities_world = ecs.new_world()
+	entities_world = ecs.init_ecs()
 	{ 	// TODO: Remove this code, only to try gui
 		{
-			ent := ecs.add_entity(entities_world)
+			ent := ecs.create_entity(&entities_world)
 			model_component := renderer.model_new("assets/models/vampire/dancing_vampire.dae")
-			ecs.add_component(entities_world, ent, model_component)
+			ecs.add_component(&entities_world, ent, model_component)
 			ecs.add_component(
-				entities_world,
+				&entities_world,
 				ent,
 				engine.Transform {
 					glm.vec3{0.0, 0.0, 0.0},
@@ -74,15 +72,15 @@ initialize :: proc() {
 					glm.mat4Translate({0.0, 0.0, 0.0}),
 				},
 			)
-			ecs.add_component(entities_world, ent, engine.Name("Vampire"))
+			ecs.add_component(&entities_world, ent, engine.Name("Vampire"))
 		}
 
 		{
-			ent := ecs.add_entity(entities_world)
+			ent := ecs.create_entity(&entities_world)
 			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
-			ecs.add_component(entities_world, ent, model_component)
+			ecs.add_component(&entities_world, ent, model_component)
 			ecs.add_component(
-				entities_world,
+				&entities_world,
 				ent,
 				engine.Transform {
 					glm.vec3{0.0, 0.0, 0.0},
@@ -91,13 +89,13 @@ initialize :: proc() {
 					glm.mat4Translate({0.0, 0.0, 0.0}),
 				},
 			)
-			ecs.add_component(entities_world, ent, engine.Name("Backpack"))
+			ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
 		}
 	}
 
 
 	{ 	// Gui panels
-		scene_panel = gui_panels.scene_panel_new(entities_world)
+		scene_panel = gui_panels.scene_panel_new(&entities_world)
 	}
 }
 
@@ -106,7 +104,7 @@ shutdown :: proc() {
 
 	{ 	// Clear entities world
 		// TODO: Get all entities and free them in the correct way
-		ecs.delete_world(entities_world)
+		ecs.deinit_ecs(&entities_world)
 	}
 
 	{ 	// Gui panels
@@ -115,7 +113,6 @@ shutdown :: proc() {
 }
 
 update :: proc(dt: f64) {
-
 	if engine.is_button_pressed(engine.MouseButton.ButtonMiddle) {
 		engine.camera_on_update(&camera_controller, dt)
 	}
@@ -126,33 +123,19 @@ render :: proc() {
 	renderer.clear_screen({0.1, 0.1, 0.1, 1.0})
 
 	{ 	// Render models
-		for archetype in ecs.query(
-			entities_world,
-			ecs.has(^renderer.Model),
-			ecs.has(engine.Transform),
+		for ent in ecs.get_entities_with_components(
+			&entities_world,
+			{^renderer.Model, engine.Transform},
 		) {
-			for eid, _ in archetype.entities {
-				model := ecs.get_component_cast(
-					entities_world,
-					eid,
-					^renderer.Model,
-					^renderer.Model,
-				)
+			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
+			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
 
-				transform := ecs.get_component_cast(
-					entities_world,
-					eid,
-					engine.Transform,
-					engine.Transform,
-				)
-
-				renderer.renderer_draw_model(
-					model,
-					&transform,
-					&camera_controller.view_mat,
-					&camera_controller.proj_mat,
-				)
-			}
+			renderer.renderer_draw_model(
+				model^,
+				transform,
+				&camera_controller.view_mat,
+				&camera_controller.proj_mat,
+			)
 		}
 	}
 

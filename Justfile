@@ -4,13 +4,13 @@ setup:
     mkdir build/
 
 build-dbg:
-    odin build animagik -out:build/animagik-dbg -debug -vet -strict-style -strict-target-features
+    odin build animagik -out:build/animagik-dbg -debug
 
 run-dbg: build-dbg
     ./build/animagik-dbg
 
 build:
-    odin build animagik -out:build/animagik -vet -strict-style -strict-target-features
+    odin build animagik -out:build/animagik
 
 run: build
     ./build/animagik

@@ -1,11 +1,11 @@
- {
+{
     "version": "2.0.0",
     "tasks": [
         {
             "label": "Build",
             "type": "shell",
-            "command": "odin build animagik -debug -out:build/animagik-dbg -vet -strict-style -strict-target-features",
+            "command": "odin build animagik -debug -out:build/animagik-dbg",
             "group": "build"
-        },
+        }
     ]
 }
