@@ -55,7 +55,10 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 		// new_name: string = "dsadsa;kd;lsak;l"
 		// im.InputText("Name", strings.unsafe_string_to_cstring(new_name), len(new_name))
 
+		// TODO: Change font size/style(bold)
+		im.Text("Entity name: %s", strings.unsafe_string_to_cstring(name^))
 
+		im.SeparatorText("Transform")
 		transform, err := ecs.get_component(
 			panel.entities_world,
 			panel.selected_entity,
@@ -94,5 +97,7 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 			}
 		}
 	}
+	im.Separator()
+
 	im.End()
 }

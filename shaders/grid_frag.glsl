@@ -27,9 +27,9 @@ vec4 grid(vec3 frag_pos_3d, float scale) {
 
     vec4 color = vec4(0.2, 0.2, 0.2, 1.0 - min(line, 1.0));
 
-    if (frag_pos_3d.x > -0.1 * minimumx && frag_pos_3d.x < 0.1 * minimumx)
+    if (frag_pos_3d.x > -0.9 * minimumx && frag_pos_3d.x < 0.9 * minimumx)
         color.z = 1.0;
-    if (frag_pos_3d.z > -0.1 * minimumz && frag_pos_3d.z < 0.1 * minimumz)
+    if (frag_pos_3d.z > -0.9 * minimumz && frag_pos_3d.z < 0.9 * minimumz)
         color.x = 1.0;
 
     return color;

@@ -120,7 +120,7 @@ update :: proc(dt: f64) {
 
 render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
-	renderer.clear_screen({0.1, 0.1, 0.1, 1.0})
+	renderer.clear_screen({0.68, 0.68, 0.68, 1.0})
 
 	{ 	// Render models
 		for ent in ecs.get_entities_with_components(
@@ -201,10 +201,6 @@ imgui_render :: proc() {
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
-	}
-
-	{ 	// TODO: Remove
-		im.ShowDemoWindow()
 	}
 }
 
