@@ -15,7 +15,7 @@ import glm "core:math/linalg/glsl"
 
 ScenePanel :: struct {
 	entities_world:  ^ecs.Context,
-	selected_entity: ^ecs.Entity,
+	selected_entity: ecs.Entity,
 }
 
 scene_panel_new :: proc(entities_world: ^ecs.Context) -> ^ScenePanel {
@@ -29,12 +29,9 @@ scene_panel_destroy :: proc(panel: ^ScenePanel) {
 }
 
 scene_panel_render :: proc(panel: ^ScenePanel) {
-	im.Begin("Default entities")
-	im.End()
-
 	im.Begin("Entities")
-
-	for ent in panel.entities_world.entities.entities {
+	selected: bool = false
+	for ent, idx in panel.entities_world.entities.entities {
 		if !ent.is_valid {
 			continue
 		}
@@ -45,13 +42,27 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 			continue
 		}
 
-		if im.TreeNode(strings.unsafe_string_to_cstring(name^)) {
-			transform, err := ecs.get_component(panel.entities_world, ent, engine.Transform)
-			if err == ecs.ECS_Error.ENTITY_DOES_NOT_HAVE_THIS_COMPONENT {
-				continue
-			}
-			if im.TreeNode("Transform") {
-				// Position controls
+		selected = panel.selected_entity == ent
+		if im.Selectable(strings.unsafe_string_to_cstring(name^), selected) {
+			panel.selected_entity = ent
+		}
+	}
+	im.End()
+
+	im.Begin("Selected entity")
+	name, err := ecs.get_component(panel.entities_world, panel.selected_entity, engine.Name)
+	if err != ecs.ECS_Error.ENTITY_DOES_NOT_HAVE_THIS_COMPONENT {
+		// new_name: string = "dsadsa;kd;lsak;l"
+		// im.InputText("Name", strings.unsafe_string_to_cstring(new_name), len(new_name))
+
+
+		transform, err := ecs.get_component(
+			panel.entities_world,
+			panel.selected_entity,
+			engine.Transform,
+		)
+		if err == ecs.ECS_Error.NO_ERROR {
+			{ 	// Transform
 				im.Text("Position:")
 				changed := false
 				changed |= im.DragFloat3(
@@ -62,11 +73,9 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 					math.F32_MAX,
 				)
 
-				// Rotation controls
 				im.Text("Rotation:")
 				changed |= im.DragFloat3("Rot", &transform.rotation, 0.1, -math.PI, math.PI)
 
-				// Scale controls
 				im.Text("Scale:")
 				changed |= im.DragFloat3("Scale", &transform.scale, 0.01, 0, 10)
 
@@ -78,9 +87,11 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 						glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
 						glm.mat4Scale(transform.scale)
 				}
-				im.TreePop()
 			}
-			im.TreePop()
+
+			{ 	// Texture
+
+			}
 		}
 	}
 	im.End()

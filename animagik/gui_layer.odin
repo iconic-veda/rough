@@ -202,6 +202,10 @@ imgui_render :: proc() {
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
 	}
+
+	{ 	// TODO: Remove
+		im.ShowDemoWindow()
+	}
 }
 
 on_event :: proc(ev: engine.Event) {
