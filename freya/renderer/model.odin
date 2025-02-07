@@ -28,7 +28,8 @@ model_new :: proc(file_path: string) -> ^Model {
 	if scene == nil ||
 	   scene.mFlags & u32(assimp.SceneFlags.INCOMPLETE) != 0 ||
 	   scene.mRootNode == nil {
-		log.fatalf("Failed to load model: {}", file_path)
+		log.error("Failed to load model: ", file_path)
+		return nil
 	}
 
 	process_node :: proc(
@@ -148,8 +149,13 @@ model_new :: proc(file_path: string) -> ^Model {
 				)
 				copy(textures, textures_diffuse)
 				copy(textures[len(textures_diffuse):], textures_specular)
-				copy(textures[len(textures_specular)+len(textures_diffuse):], textures_normals)
-				copy(textures[len(textures_specular)+len(textures_diffuse)+len(textures_normals):], textures_height)
+				copy(textures[len(textures_specular) + len(textures_diffuse):], textures_normals)
+				copy(
+					textures[len(textures_specular) +
+					len(textures_diffuse) +
+					len(textures_normals):],
+					textures_height,
+				)
 			}
 			append(&model.meshes, mesh_new(vertices, indices, textures))
 		}
