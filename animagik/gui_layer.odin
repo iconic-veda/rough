@@ -62,16 +62,19 @@ initialize :: proc() {
 			ent := ecs.create_entity(&entities_world)
 			model_component := renderer.model_new("assets/models/vampire/dancing_vampire.dae")
 			ecs.add_component(&entities_world, ent, model_component)
-			ecs.add_component(
-				&entities_world,
-				ent,
-				engine.Transform {
-					glm.vec3{0.0, 0.0, 0.0},
-					glm.vec3{0.0, 0.0, 0.0},
-					glm.vec3{1.0, 1.0, 1.0},
-					glm.mat4Translate({0.0, 0.0, 0.0}),
-				},
-			)
+			t := engine.Transform {
+				glm.vec3{10.0, 0.0, 0.0},
+				glm.vec3{0.0, 0.0, 0.0},
+				glm.vec3{0.04, 0.04, 0.04},
+				glm.mat4Translate({0.0, 0.0, 0.0}),
+			}
+			t.model_matrix =
+				glm.mat4Translate(t.position) *
+				glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
+				glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
+				glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
+				glm.mat4Scale(t.scale)
+			ecs.add_component(&entities_world, ent, t)
 			ecs.add_component(&entities_world, ent, engine.Name("Vampire"))
 		}
 
@@ -79,16 +82,19 @@ initialize :: proc() {
 			ent := ecs.create_entity(&entities_world)
 			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
 			ecs.add_component(&entities_world, ent, model_component)
-			ecs.add_component(
-				&entities_world,
-				ent,
-				engine.Transform {
-					glm.vec3{0.0, 0.0, 0.0},
-					glm.vec3{0.0, 0.0, 0.0},
-					glm.vec3{1.0, 1.0, 1.0},
-					glm.mat4Translate({0.0, 0.0, 0.0}),
-				},
-			)
+			t := engine.Transform {
+				glm.vec3{0.0, 0.0, 0.0},
+				glm.vec3{0.0, 0.0, 0.0},
+				glm.vec3{1, 1, 1},
+				glm.mat4Translate({0.0, 0.0, 0.0}),
+			}
+			t.model_matrix =
+				glm.mat4Translate(t.position) *
+				glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
+				glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
+				glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
+				glm.mat4Scale(t.scale)
+			ecs.add_component(&entities_world, ent, t)
 			ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
 		}
 	}
@@ -140,7 +146,6 @@ render :: proc() {
 	}
 
 	renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
-
 	renderer.framebuffer_unbind()
 }
 
