@@ -4,6 +4,8 @@ import "core:math"
 import "core:os"
 import "core:strings"
 
+import "core:fmt"
+
 import engine "../../freya/engine"
 import renderer "../../freya/renderer"
 
@@ -119,8 +121,8 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 
 @(private)
 add_model_panel :: proc(panel: ^ScenePanel) {
-	name_buffer: [128]byte
-	im.InputText("Entity Name", cstring(&name_buffer[0]), 128)
+	name_buffer: []byte = make([]byte, 20)
+	im.InputText("Entity Name", cstring(&name_buffer[0]), 20)
 
 	if im.Button("Select Model File") {
 		panel.model_file_selector.show_file_selector = true
@@ -155,12 +157,24 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 				engine.Transform {
 					glm.vec3{0.0, 0.0, 0.0},
 					glm.vec3{0.0, 0.0, 0.0},
-					glm.vec3{0.0, 0.0, 0.0},
+					glm.vec3{1.0, 1.0, 1.0},
 					glm.mat4Translate({0.0, 0.0, 0.0}),
 				},
 			)
-			ecs.add_component(panel.entities_world, ent, engine.Name(name_buffer[:]))
+
+			null_pos := 0
+			for null_pos < 20 && name_buffer[null_pos] != 0 {
+				null_pos += 1
+			}
+
+			name := string(name_buffer[:null_pos])
+			if name == "" {
+				ecs.add_component(panel.entities_world, ent, engine.Name("Test entity"))
+			} else {
+				ecs.add_component(panel.entities_world, ent, engine.Name(name_buffer[:]))
+			}
 			file_selector_reset(panel.model_file_selector)
+			show_add_entity_panel = false
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package engine
 
+import "vendor:glfw"
+
 import im "../vendor/odin-imgui"
 import "../vendor/odin-imgui/imgui_impl_glfw"
 import "../vendor/odin-imgui/imgui_impl_opengl3"
@@ -12,7 +14,7 @@ init_imgui :: proc() {
 	imgui_io := im.GetIO()
 	imgui_io.ConfigFlags += {.NavEnableKeyboard}
 	when !DISABLE_DOCKING {
-		imgui_io.ConfigFlags += {.DockingEnable}
+		imgui_io.ConfigFlags += {.DockingEnable, .ViewportsEnable}
 
 		style := im.GetStyle()
 		style.WindowRounding = 0
@@ -42,6 +44,12 @@ begin_imgui :: proc() {
 end_imgui :: proc() {
 	im.Render()
 	imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
+
+	backup_current_window := glfw.GetCurrentContext()
+	im.UpdatePlatformWindows()
+	im.RenderPlatformWindowsDefault()
+	glfw.MakeContextCurrent(backup_current_window)
+
 }
 
 
