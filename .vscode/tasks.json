@@ -4,7 +4,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "odin build animagik -debug -out:build/animagik-dbg",
+            "command": "odin build animagik -debug -out:build/animagik-dbg -extra-linker-flags:\"-Lbuild/libs -Wl,-rpath=build/libs\"",
             "group": "build"
         }
     ]

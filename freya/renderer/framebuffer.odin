@@ -1,5 +1,7 @@
 package renderer
 
+import "core:log"
+
 import gl "vendor:OpenGL"
 
 FrameBuffer :: struct {
@@ -84,7 +86,10 @@ _framebuffer_add_attachment :: proc(fbo: ^FrameBuffer) {
 	for t in fbo.attachments {
 		switch t {
 		case FrameBufferAttachment.Color:
-			tex := texture_new_empty(fbo.width, fbo.height)
+			tex, err := texture_new_empty(fbo.width, fbo.height)
+			if err != TextureError.NoError {
+				log.fatal("Failed to create texture for framebuffer")
+			}
 			fbo.texture = tex
 			gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex.id, 0)
 		case FrameBufferAttachment.DepthStencil:

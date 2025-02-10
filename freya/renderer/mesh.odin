@@ -1,5 +1,6 @@
 package renderer
 
+import "core:log"
 import "core:mem"
 
 import glm "core:math/linalg/glsl"
@@ -59,7 +60,10 @@ mesh_new_explicit :: proc(
 @(export)
 mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 	for texture_handle, idx in m.textures {
-		texture := resource_manager_get(texture_handle)
+		texture, err := resource_manager_get(texture_handle)
+		if err != ResourceManagerError.NoError {
+			continue
+		}
 
 		name: string
 		switch texture.type {

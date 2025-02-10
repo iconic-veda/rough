@@ -13,18 +13,23 @@ ResourceManager :: struct {
 	textures: map[TextureHandle]^Texture,
 }
 
+ResourceManagerError :: enum {
+	NoError,
+	TextureNotFound,
+}
+
 resource_manager_get :: proc {
 	resource_manager_get_texture,
 }
 
 @(export)
-resource_manager_get_texture :: proc(handle: TextureHandle) -> ^Texture {
+resource_manager_get_texture :: proc(handle: TextureHandle) -> (^Texture, ResourceManagerError) {
 	texture, ok := RESOURCE_MANAGER.textures[handle]
 	if !ok {
 		log.errorf("Texture not found: {}", handle)
-		return nil // NOTE: Return a default texture ?
+		return nil, ResourceManagerError.TextureNotFound // NOTE: Return a default texture ?
 	}
-	return texture
+	return texture, ResourceManagerError.NoError
 }
 
 resource_manager_add :: proc {
@@ -41,11 +46,14 @@ resource_manager_add_texture :: proc(path: string, type: TextureType) -> Texture
 	digest := path
 
 	if _, ok := RESOURCE_MANAGER.textures[TextureHandle(digest)]; ok {
-		log.debugf("Texture already loaded: {}", path)
+		// log.debugf("Texture already loaded: {}", path)
 		return TextureHandle(digest)
 	}
 
-	texture: ^Texture = texture_new(path, type)
+	texture, err := texture_new(path, type)
+	if err != TextureError.NoError {
+		return TextureHandle("")
+	}
 	RESOURCE_MANAGER.textures[TextureHandle(digest)] = texture
 
 	return TextureHandle(digest)
