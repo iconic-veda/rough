@@ -40,3 +40,11 @@
 !build/
 !build/libs
 !build/libs/*
+
+!assets/
+!assets/models
+!assets/models/backpack
+!assets/models/backpack/**
+
+!assets/models/vampire
+!assets/models/vampire/**
