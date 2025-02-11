@@ -129,19 +129,7 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 	}
 
 	if panel.model_file_selector.show_file_selector {
-		object_path: string
-		path := file_selector_panel(panel.model_file_selector)
-		if strings.ends_with(path, ".obj") {
-			object_path = file_selector_panel(panel.model_file_selector)
-		} else if strings.ends_with(path, ".dae") {
-			object_path = file_selector_panel(panel.model_file_selector)
-		} else if strings.ends_with(path, ".fbx") {
-			object_path = file_selector_panel(panel.model_file_selector)
-		} else if strings.ends_with(path, ".gltf") {
-			object_path = file_selector_panel(panel.model_file_selector)
-		} else if strings.ends_with(path, ".glb") {
-			object_path = file_selector_panel(panel.model_file_selector)
-		}
+		object_path := file_selector_panel(panel.model_file_selector)
 
 		if object_path != "" {
 			model_component := renderer.model_new(object_path)

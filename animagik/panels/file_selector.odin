@@ -43,10 +43,14 @@ file_selector_panel :: proc(selector: ^FileSelector) -> string {
 					selector.parent_dir = strings.concatenate(
 						{selector.parent_dir, "/", info.name},
 					)
+					im.End()
+					return ""
 				} else {
 					selector.selected_file_path = strings.concatenate(
 						{selector.parent_dir, "/", info.name},
 					)
+					im.End()
+					return selector.selected_file_path
 				}
 			}
 		}
