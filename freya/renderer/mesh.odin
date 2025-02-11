@@ -19,7 +19,7 @@ Vertex :: struct {
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	material_index:   i32,
+	material:         MaterialHandle,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -44,13 +44,13 @@ mesh_free :: proc(m: ^Mesh) {
 mesh_new_explicit :: proc(
 	vertices: []Vertex,
 	indices: []u32,
-	material_index: i32,
+	material: MaterialHandle,
 	allocator := context.allocator,
 ) -> ^Mesh {
 	m := new(Mesh, allocator)
 	m.vertices = vertices
 	m.indices = indices
-	m.material_index = material_index
+	m.material = material
 	m._allocator = allocator
 	_mesh_setup_buffers(m)
 	return m
@@ -91,8 +91,8 @@ mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 }
 
 @(export)
-mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram, material: MaterialHandle) {
-	material, err := resource_manager_get(material)
+mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
+	material, err := resource_manager_get(m.material)
 	if err != ResourceManagerError.NoError {
 		log.error("Failed to get material")
 		return

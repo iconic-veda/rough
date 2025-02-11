@@ -4,6 +4,7 @@ import "core:crypto"
 import "core:fmt"
 import "core:log"
 import "core:path/filepath"
+import "core:strings"
 
 import "../vendor/assimp"
 
@@ -62,7 +63,7 @@ process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Mode
 		for i in 0 ..< node.mNumMeshes {
 			mesh_idx := node.mMeshes[i]
 			mesh := scene.mMeshes[mesh_idx]
-			extract_mesh(model, mesh)
+			extract_mesh(model, scene, mesh)
 		}
 
 		for i in 0 ..< node.mNumChildren {
@@ -71,7 +72,7 @@ process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Mode
 	}
 }
 
-extract_mesh :: proc(model: ^Model, mesh: ^assimp.Mesh) {
+extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	vertices: []Vertex = make([]Vertex, mesh.mNumVertices)
 	for i in 0 ..< mesh.mNumVertices {
 		vertices[i].position = mesh.mVertices[i].xyz
@@ -113,7 +114,28 @@ extract_mesh :: proc(model: ^Model, mesh: ^assimp.Mesh) {
 
 	// TODO: Extract bones
 
-	append(&model.meshes, mesh_new(vertices, indices, i32(mesh.mMaterialIndex)))
+
+	mat_name: assimp.String
+	if assimp.get_material_string(
+		   scene.mMaterials[mesh.mMaterialIndex],
+		   "?mat.name",
+		   0,
+		   0,
+		   &mat_name,
+	   ) !=
+	   assimp.Return.SUCCESS {
+		log.error("Failed to get material name")
+	}
+
+
+	append(
+		&model.meshes,
+		mesh_new(
+			vertices,
+			indices,
+			MaterialHandle(strings.clone(transmute(string)mat_name.data[:mat_name.length])),
+		),
+	)
 }
 
 extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string) {
@@ -258,20 +280,20 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			ambient = resource_manager_add(texture_path, TextureType.Ambient)
 		}
 
-		name_buffer: [5]u8
-		crypto.rand_bytes(name_buffer[:])
+		if shininess == 0.0 && diffuse == "" && specular == "" && height == "" && ambient == "" {
+			continue
+		}
 
-		name := fmt.tprintf(
-			"%02x%02x%02x%02x%02x",
-			name_buffer[0],
-			name_buffer[1],
-			name_buffer[2],
-			name_buffer[3],
-			name_buffer[4],
-		)
 		append(
 			&model.materials,
-			resource_manager_add(name, diffuse, specular, height, ambient, shininess),
+			resource_manager_add(
+				strings.clone(transmute(string)mat_name.data[:mat_name.length]),
+				diffuse,
+				specular,
+				height,
+				ambient,
+				shininess,
+			),
 		)
 	}
 }
@@ -289,10 +311,6 @@ model_free :: proc(model: ^Model) {
 @(export)
 model_draw :: proc(model: ^Model, shader: ShaderProgram) {
 	for &mesh in model.meshes {
-		if mesh.material_index == -1 || mesh.material_index >= i32(len(model.materials)) {
-			mesh_draw(mesh, shader)
-		} else {
-			mesh_draw_with_material(mesh, shader, model.materials[mesh.material_index])
-		}
+		mesh_draw_with_material(mesh, shader)
 	}
 }
