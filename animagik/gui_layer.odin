@@ -1,7 +1,5 @@
 package animagik
 
-import "core:fmt"
-
 import gui_panels "panels"
 
 import freya "../freya"
@@ -15,7 +13,7 @@ import im "../freya/vendor/odin-imgui"
 
 ASPECT_RATIO: f32 = 800.0 / 600.0
 
-camera_controller: engine.OpenGLCameraController
+camera_controller: engine.EditorCameraController
 viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
@@ -48,7 +46,7 @@ initialize :: proc() {
 		},
 	)
 
-	camera_controller = engine.new_camera_controller(ASPECT_RATIO)
+	camera_controller = engine.new_editor_camera_controller(ASPECT_RATIO)
 
 	viewport_fb = renderer.framebuffer_new(
 		800,
@@ -119,9 +117,7 @@ shutdown :: proc() {
 }
 
 update :: proc(dt: f64) {
-	if engine.is_button_pressed(engine.MouseButton.ButtonMiddle) {
-		engine.camera_on_update(&camera_controller, dt)
-	}
+	engine.camera_on_update(&camera_controller, dt)
 }
 
 render :: proc() {
@@ -231,6 +227,5 @@ on_event :: proc(ev: engine.Event) {
 			}
 		}
 	}
-
 	engine.camera_on_event(&camera_controller, ev)
 }
