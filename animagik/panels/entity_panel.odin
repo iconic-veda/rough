@@ -1,10 +1,10 @@
 package panel
 
+import "core:crypto"
+import "core:fmt"
 import "core:math"
 import "core:os"
 import "core:strings"
-
-import "core:fmt"
 
 import engine "../../freya/engine"
 import renderer "../../freya/renderer"
@@ -157,9 +157,21 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 
 			name := string(name_buffer[:null_pos])
 			if name == "" {
-				ecs.add_component(panel.entities_world, ent, engine.Name("Test entity"))
+				name_buffer: [5]u8
+				crypto.rand_bytes(name_buffer[:])
+
+				name = fmt.tprintf(
+					"%02x%02x%02x%02x%02x",
+					name_buffer[0],
+					name_buffer[1],
+					name_buffer[2],
+					name_buffer[3],
+					name_buffer[4],
+				)
+				ecs.add_component(panel.entities_world, ent, engine.Name(name))
+
 			} else {
-				ecs.add_component(panel.entities_world, ent, engine.Name(name_buffer[:]))
+				ecs.add_component(panel.entities_world, ent, engine.Name(name))
 			}
 			file_selector_reset(panel.model_file_selector)
 			show_add_entity_panel = false
