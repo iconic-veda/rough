@@ -1,23 +1,29 @@
 package renderer
 
+import "core:crypto"
+import "core:fmt"
 import "core:log"
 import "core:path/filepath"
-// import glm "core:math/linalg/glsl"
 
 import "../vendor/assimp"
 
 Model :: struct {
-	meshes: [dynamic]^Mesh,
+	meshes:    [dynamic]^Mesh,
+	materials: [dynamic]MaterialHandle,
 }
 
 @(export)
 model_new :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
-	model := new(Model)
 
 	scene := assimp.import_file(
 		file_path,
-		u32(assimp.PostProcessSteps.Triangulate | assimp.PostProcessSteps.FlipUVs),
+		u32(
+			assimp.PostProcessSteps.Triangulate |
+			assimp.PostProcessSteps.FlipUVs |
+			assimp.PostProcessSteps.GenSmoothNormals |
+			assimp.PostProcessSteps.CalcTangentSpace,
+		),
 	)
 	defer {
 		// assimp.release_import(scene)
@@ -32,143 +38,210 @@ model_new :: proc(file_path: string) -> ^Model {
 		return nil
 	}
 
-	process_node :: proc(
-		node: ^assimp.Node,
-		scene: ^assimp.Scene,
-		model: ^Model,
-		base_path: string,
-	) {
-		// Process meshes if any
-		for i: u32 = 0; i < node.mNumMeshes; i += 1 {
-			assimp_mesh := scene.mMeshes[node.mMeshes[i]]
-			vertices: []Vertex = make([]Vertex, assimp_mesh.mNumVertices + 1)
-			indices: []u32 = make([]u32, assimp_mesh.mNumFaces * 1024)
+	base_path := filepath.dir(file_path)
 
-			for vertex_idx: u32 = 0; vertex_idx < assimp_mesh.mNumVertices; vertex_idx += 1 {
-				vertices[vertex_idx].position = assimp_mesh.mVertices[vertex_idx].xyz
-				vertices[vertex_idx].normal = assimp_mesh.mNormals[vertex_idx].xyz
+	model := new(Model)
+	extract_materials(model, scene, base_path)
+	process_root_node(scene.mRootNode, scene, model)
 
-				// NOTE: We only care about the first set of texture coordinates
-				if assimp_mesh.mTextureCoords[0] != nil {
-					vertices[vertex_idx].tex_coords = assimp_mesh.mTextureCoords[0][vertex_idx].xy
-				} else {
-					vertices[vertex_idx].tex_coords = {0.0, 0.0}
-				}
-			}
+	return model
+}
 
-			num_indices := 0 // TODO: Find better way (maybe dynamic arrays?)
-			for face_idx: u32 = 0; face_idx < assimp_mesh.mNumFaces; face_idx += 1 {
-				face := assimp_mesh.mFaces[face_idx]
-				for indice_idx: u32 = 0; indice_idx < face.mNumIndices; indice_idx += 1 {
-					indices[num_indices] = face.mIndices[indice_idx]
-					num_indices += 1
-				}
-			}
-			indices = indices[:num_indices]
-
-			textures: []TextureHandle = nil
-			if assimp_mesh.mMaterialIndex >= 0 {
-				material := scene.mMaterials[assimp_mesh.mMaterialIndex]
-				load_textures :: proc(
-					material: ^assimp.Material,
-					type: assimp.TextureType,
-					base_path: string,
-				) -> []TextureHandle {
-					texture_count := assimp.get_material_textureCount(material, type)
-					textures: []TextureHandle = make([]TextureHandle, texture_count)
-					for texture_idx: u32 = 0; texture_idx < texture_count; texture_idx += 1 {
-						object_relative_path: assimp.String
-						mapping: assimp.TextureMapping
-						uvindex: u32
-						blend: f64
-						op: assimp.TextureOp
-						mapmode: assimp.TextureMapMode
-						assimp.get_material_texture(
-							material,
-							type,
-							texture_idx,
-							&object_relative_path,
-							&mapping,
-							&uvindex,
-							&blend,
-							&op,
-							&mapmode,
-						)
-
-						texture_path := filepath.join(
-							{
-								base_path,
-								transmute(string)object_relative_path.data[:object_relative_path.length],
-							},
-						)
-						// TODO: Use assimp mapping/uvindex/blend/op/mapmode to create texture
-						#partial switch type {
-						case assimp.TextureType.DIFFUSE:
-							textures[texture_idx] = resource_manager_add(
-								texture_path,
-								TextureType.Diffuse,
-							)
-						case assimp.TextureType.SPECULAR:
-							textures[texture_idx] = resource_manager_add(
-								texture_path,
-								TextureType.Specular,
-							)
-						case assimp.TextureType.NORMALS:
-							textures[texture_idx] = resource_manager_add(
-								texture_path,
-								TextureType.Normal,
-							)
-						case assimp.TextureType.HEIGHT:
-							textures[texture_idx] = resource_manager_add(
-								texture_path,
-								TextureType.Height,
-							)
-						case:
-							log.fatal("Texture type not supported", type)
-						}
-					}
-					return textures
-				}
-
-				textures_diffuse := load_textures(material, assimp.TextureType.DIFFUSE, base_path)
-				textures_specular := load_textures(
-					material,
-					assimp.TextureType.SPECULAR,
-					base_path,
-				)
-				textures_normals := load_textures(material, assimp.TextureType.NORMALS, base_path)
-				textures_height := load_textures(material, assimp.TextureType.HEIGHT, base_path)
+process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Model) {
+	stack: [dynamic]^assimp.Node = make([dynamic]^assimp.Node)
+	defer delete(stack)
+	append(&stack, root)
 
 
-				textures = make(
-					[]TextureHandle,
-					len(textures_diffuse) +
-					len(textures_specular) +
-					len(textures_normals) +
-					len(textures_height),
-				)
-				copy(textures, textures_diffuse)
-				copy(textures[len(textures_diffuse):], textures_specular)
-				copy(textures[len(textures_specular) + len(textures_diffuse):], textures_normals)
-				copy(
-					textures[len(textures_specular) +
-					len(textures_diffuse) +
-					len(textures_normals):],
-					textures_height,
-				)
-			}
-			append(&model.meshes, mesh_new(vertices, indices, textures))
+	for len(stack) > 0 {
+		node := stack[len(stack) - 1]
+		pop(&stack)
+
+		// log.debug("Processing node: ", transmute(string)node.mName.data[:node.mName.length])
+
+		for i in 0 ..< node.mNumMeshes {
+			mesh_idx := node.mMeshes[i]
+			mesh := scene.mMeshes[mesh_idx]
+			extract_mesh(model, mesh)
 		}
 
-		// Process child obj
-		for child_idx: u32 = 0; child_idx < node.mNumChildren; child_idx += 1 {
-			process_node(node.mChildren[child_idx], scene, model, base_path)
+		for i in 0 ..< node.mNumChildren {
+			append(&stack, node.mChildren[i])
+		}
+	}
+}
+
+extract_mesh :: proc(model: ^Model, mesh: ^assimp.Mesh) {
+	vertices: []Vertex = make([]Vertex, mesh.mNumVertices)
+	for i in 0 ..< mesh.mNumVertices {
+		vertices[i].position = mesh.mVertices[i].xyz
+
+		if mesh.mNormals != nil {
+			vertices[i].normal = mesh.mNormals[i].xyz
+		}
+
+		if mesh.mTextureCoords[0] != nil {
+			vertices[i].tex_coords = mesh.mTextureCoords[0][i].xy
+		} else {
+			vertices[i].tex_coords = {0.0, 0.0}
+		}
+
+		if mesh.mTangents != nil {
+			vertices[i].tangent = mesh.mTangents[i].xyz
+		}
+
+		if mesh.mBitangents != nil {
+			vertices[i].bitanget = mesh.mBitangents[i].xyz
 		}
 	}
 
-	base_path := filepath.dir(file_path)
-	process_node(scene.mRootNode, scene, model, base_path)
-	return model
+	// Get indices
+	index_count: u32 = 0
+	for i in 0 ..< mesh.mNumFaces {
+		index_count += mesh.mFaces[i].mNumIndices
+	}
+	indices: []u32 = make([]u32, index_count)
+
+	idx: u32 = 0
+	for i in 0 ..< mesh.mNumFaces {
+		face := mesh.mFaces[i]
+		for j in 0 ..< face.mNumIndices {
+			indices[idx] = face.mIndices[j]
+			idx += 1
+		}
+	}
+
+	// TODO: Extract bones
+
+	append(&model.meshes, mesh_new(vertices, indices, i32(mesh.mMaterialIndex)))
+}
+
+extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string) {
+	for i in 0 ..< scene.mNumMaterials {
+		mat: ^assimp.Material = scene.mMaterials[i]
+
+		mat_name: assimp.String
+		if assimp.get_material_string(mat, "?mat.name", 0, 0, &mat_name) != assimp.Return.SUCCESS {
+			log.error("Failed to get material name")
+			continue
+		}
+
+		max: u32
+		shininess: f64
+		if assimp.get_material_floatArray(mat, "$mat.shininess", 0, 0, &shininess, &max) !=
+		   assimp.Return.SUCCESS {
+			log.error("Failed to get material name")
+			continue
+		}
+
+		if max > 1 {
+			log.error("More than one shininess value")
+			continue
+		}
+
+		diffuse, specular, normal: TextureHandle = "", "", ""
+		// Get textures, NOTE: more than one texture per type is not supported
+		if assimp.get_material_textureCount(mat, assimp.TextureType.DIFFUSE) > 0 {
+			relative_path: assimp.String
+			mapping: assimp.TextureMapping
+			uvindex: u32
+			blend: f64
+			op: assimp.TextureOp
+			mapmode: assimp.TextureMapMode
+			if assimp.get_material_texture(
+				   mat,
+				   assimp.TextureType.DIFFUSE,
+				   0,
+				   &relative_path,
+				   &mapping,
+				   &uvindex,
+				   &blend,
+				   &op,
+				   &mapmode,
+			   ) !=
+			   assimp.Return.SUCCESS {
+				log.error("Failed to get material texture")
+				continue
+			}
+
+			texture_path := filepath.join(
+				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+			)
+
+			diffuse = resource_manager_add(texture_path, TextureType.Diffuse)
+		}
+		if assimp.get_material_textureCount(mat, assimp.TextureType.SPECULAR) > 0 {
+			relative_path: assimp.String
+			mapping: assimp.TextureMapping
+			uvindex: u32
+			blend: f64
+			op: assimp.TextureOp
+			mapmode: assimp.TextureMapMode
+			if assimp.get_material_texture(
+				   mat,
+				   assimp.TextureType.SPECULAR,
+				   0,
+				   &relative_path,
+				   &mapping,
+				   &uvindex,
+				   &blend,
+				   &op,
+				   &mapmode,
+			   ) !=
+			   assimp.Return.SUCCESS {
+				log.error("Failed to get material texture")
+				continue
+			}
+
+			texture_path := filepath.join(
+				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+			)
+
+			specular = resource_manager_add(texture_path, TextureType.Diffuse)
+		}
+		if assimp.get_material_textureCount(mat, assimp.TextureType.HEIGHT) > 0 {
+			relative_path: assimp.String
+			mapping: assimp.TextureMapping
+			uvindex: u32
+			blend: f64
+			op: assimp.TextureOp
+			mapmode: assimp.TextureMapMode
+			if assimp.get_material_texture(
+				   mat,
+				   assimp.TextureType.HEIGHT,
+				   0,
+				   &relative_path,
+				   &mapping,
+				   &uvindex,
+				   &blend,
+				   &op,
+				   &mapmode,
+			   ) !=
+			   assimp.Return.SUCCESS {
+				log.error("Failed to get material texture")
+				continue
+			}
+
+			texture_path := filepath.join(
+				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+			)
+
+			normal = resource_manager_add(texture_path, TextureType.Diffuse)
+		}
+
+		name_buffer: [5]u8
+		crypto.rand_bytes(name_buffer[:])
+
+		name := fmt.tprintf(
+			"%02x%02x%02x%02x%02x",
+			name_buffer[0],
+			name_buffer[1],
+			name_buffer[2],
+			name_buffer[3],
+			name_buffer[4],
+		)
+		append(&model.materials, resource_manager_add(name, diffuse, specular, normal, shininess))
+	}
 }
 
 
@@ -184,6 +257,10 @@ model_free :: proc(model: ^Model) {
 @(export)
 model_draw :: proc(model: ^Model, shader: ShaderProgram) {
 	for &mesh in model.meshes {
-		mesh_draw(mesh, shader)
+		if mesh.material_index == -1 || mesh.material_index >= i32(len(model.materials)) {
+			mesh_draw(mesh, shader)
+		} else {
+			mesh_draw_with_material(mesh, shader, model.materials[mesh.material_index])
+		}
 	}
 }

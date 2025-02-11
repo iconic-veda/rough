@@ -6,21 +6,20 @@ import "core:mem"
 import glm "core:math/linalg/glsl"
 import gl "vendor:OpenGL"
 
-Material :: struct {
-	shininess: f32,
-}
 
 Vertex :: struct {
 	position:   glm.vec3,
 	normal:     glm.vec3,
 	// color:      glm.vec3,
 	tex_coords: glm.vec2,
+	tangent:    glm.vec3,
+	bitanget:   glm.vec3,
 }
 
 Mesh :: struct {
 	vertices:         []Vertex,
 	indices:          []u32,
-	textures:         [dynamic]TextureHandle,
+	material_index:   i32,
 
 	// Private fields
 	_vao, _vbo, _ebo: u32,
@@ -45,13 +44,13 @@ mesh_free :: proc(m: ^Mesh) {
 mesh_new_explicit :: proc(
 	vertices: []Vertex,
 	indices: []u32,
-	textures: []TextureHandle,
+	material_index: i32,
 	allocator := context.allocator,
 ) -> ^Mesh {
 	m := new(Mesh, allocator)
 	m.vertices = vertices
 	m.indices = indices
-	append(&m.textures, ..textures[:])
+	m.material_index = material_index
 	m._allocator = allocator
 	_mesh_setup_buffers(m)
 	return m
@@ -59,28 +58,74 @@ mesh_new_explicit :: proc(
 
 @(export)
 mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
-	for texture_handle, idx in m.textures {
-		texture, err := resource_manager_get(texture_handle)
-		if err != ResourceManagerError.NoError {
-			continue
-		}
+	log.error("mesh_draw not implemented")
+	// for texture_handle, idx in m.textures {
+	// 	texture, err := resource_manager_get(texture_handle)
+	// 	if err != ResourceManagerError.NoError {
+	// 		continue
+	// 	}
 
-		name: string
-		switch texture.type {
-		case TextureType.Diffuse:
-			name = "material.diffuse"
-		case TextureType.Specular:
-			name = "material.specular"
-		case TextureType.Normal:
-			name = "material.normal"
-		case TextureType.Height:
-			name = "material.height"
-		}
+	// 	name: string
+	// 	switch texture.type {
+	// 	case TextureType.Diffuse:
+	// 		name = "material.diffuse"
+	// 	case TextureType.Specular:
+	// 		name = "material.specular"
+	// 	case TextureType.Normal:
+	// 		name = "material.normal"
+	// 	case TextureType.Height:
+	// 		name = "material.height"
+	// 	}
 
-		shader_set_uniform(shader, name, i32(idx))
-		gl.ActiveTexture(gl.TEXTURE0 + u32(idx))
-		gl.BindTexture(gl.TEXTURE_2D, texture.id)
+	// 	shader_set_uniform(shader, name, i32(idx))
+	// 	gl.ActiveTexture(gl.TEXTURE0 + u32(idx))
+	// 	gl.BindTexture(gl.TEXTURE_2D, texture.id)
+	// }
+	// gl.ActiveTexture(gl.TEXTURE0)
+
+	// gl.BindVertexArray(m._vao)
+	// gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
+	// gl.BindVertexArray(0)
+
+	// assert(gl.GetError() == gl.NO_ERROR, "OpenGL error")
+}
+
+@(export)
+mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram, material: MaterialHandle) {
+	material, err := resource_manager_get(material)
+	if err != ResourceManagerError.NoError {
+		log.error("Failed to get material")
+		return
 	}
+
+	{ 	// Diffuse
+		diffuse, err := resource_manager_get_texture(material.diffuse_texture)
+		if err == ResourceManagerError.NoError {
+			shader_set_uniform(shader, "material.diffuse", 0)
+			gl.ActiveTexture(gl.TEXTURE0)
+			gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
+		}
+	}
+
+	{ 	// Specular
+		specular, err := resource_manager_get_texture(material.specular_texture)
+		if err == ResourceManagerError.NoError {
+			shader_set_uniform(shader, "material.specular", 0)
+			gl.ActiveTexture(gl.TEXTURE0 + 1)
+			gl.BindTexture(gl.TEXTURE_2D, specular.id)
+		}
+	}
+
+	{ 	// Normal
+		normal, err := resource_manager_get_texture(material.normal_texture)
+		if err == ResourceManagerError.NoError {
+			shader_set_uniform(shader, "material.normal", 0)
+			gl.ActiveTexture(gl.TEXTURE0 + 2)
+			gl.BindTexture(gl.TEXTURE_2D, normal.id)
+		}
+	}
+
+
 	gl.ActiveTexture(gl.TEXTURE0)
 
 	gl.BindVertexArray(m._vao)

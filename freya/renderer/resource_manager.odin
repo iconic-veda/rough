@@ -3,64 +3,118 @@ package renderer
 import "core:crypto/hash"
 import "core:log"
 
+import "core:encoding/hex"
+
+
 // @(private) // TODO: Make this private
 RESOURCE_MANAGER: ^ResourceManager = nil
 
 Handle :: #type string
 TextureHandle :: distinct Handle
+MaterialHandle :: distinct Handle
 
 ResourceManager :: struct {
-	textures: map[TextureHandle]^Texture,
+	textures:  map[TextureHandle]^Texture,
+	materials: map[MaterialHandle]^Material,
 }
 
 ResourceManagerError :: enum {
 	NoError,
 	TextureNotFound,
+	MaterialNotFound,
 }
 
 resource_manager_get :: proc {
 	resource_manager_get_texture,
-}
-
-@(export)
-resource_manager_get_texture :: proc(handle: TextureHandle) -> (^Texture, ResourceManagerError) {
-	texture, ok := RESOURCE_MANAGER.textures[handle]
-	if !ok {
-		log.errorf("Texture not found: {}", handle)
-		return nil, ResourceManagerError.TextureNotFound // NOTE: Return a default texture ?
-	}
-	return texture, ResourceManagerError.NoError
+	resource_manager_get_material,
 }
 
 resource_manager_add :: proc {
 	resource_manager_add_texture,
+	resource_manager_add_material,
+}
+
+resource_manager_delete :: proc {
+	resource_manager_delete_texture,
+	resource_manager_delete_material,
 }
 
 // Its fine to use SHA1 here since we are not using it for security purposes
 HASH_ALGORITHM :: hash.Algorithm.Insecure_SHA1
 
+// Material
+
+resource_manager_get_material :: proc(
+	handle: MaterialHandle,
+) -> (
+	^Material,
+	ResourceManagerError,
+) {
+	material, ok := RESOURCE_MANAGER.materials[handle]
+	if !ok {
+		return nil, ResourceManagerError.MaterialNotFound // NOTE: Return a default material ?
+	}
+	return material, ResourceManagerError.NoError
+}
+
+resource_manager_add_material :: proc(
+	name: string,
+	diffuse, specular, normal: TextureHandle,
+	shininess: f64,
+) -> MaterialHandle {
+	// digest := hash.hash(hash.Algorithm.Insecure_SHA1, name)
+	// defer delete(digest)
+
+	handle := MaterialHandle(name)
+	if _, ok := RESOURCE_MANAGER.materials[handle]; ok {
+		// log.debugf("Material already loaded: {}", handle)
+		return handle
+	}
+
+	material := material_new(name, diffuse, specular, normal, shininess)
+	RESOURCE_MANAGER.materials[handle] = material
+
+	return handle
+}
+
+resource_manager_delete_material :: proc(handle: MaterialHandle) {
+	material, ok := RESOURCE_MANAGER.materials[handle]
+	if !ok {
+		return
+	}
+
+	material_free(material)
+	delete_key(&RESOURCE_MANAGER.materials, handle)
+}
+
+// Texture
+
+@(export)
+resource_manager_get_texture :: proc(handle: TextureHandle) -> (^Texture, ResourceManagerError) {
+	texture, ok := RESOURCE_MANAGER.textures[handle]
+	if !ok {
+		return nil, ResourceManagerError.TextureNotFound // NOTE: Return a default texture ?
+	}
+	return texture, ResourceManagerError.NoError
+}
+
 @(export)
 resource_manager_add_texture :: proc(path: string, type: TextureType) -> TextureHandle {
 	// digest := hash.hash(hash.Algorithm.Insecure_SHA1, path)
 	// defer delete(digest)
-	digest := path
 
-	if _, ok := RESOURCE_MANAGER.textures[TextureHandle(digest)]; ok {
-		// log.debugf("Texture already loaded: {}", path)
-		return TextureHandle(digest)
+	handle := TextureHandle(path)
+	if _, ok := RESOURCE_MANAGER.textures[handle]; ok {
+		return handle
 	}
 
 	texture, err := texture_new(path, type)
 	if err != TextureError.NoError {
 		return TextureHandle("")
 	}
-	RESOURCE_MANAGER.textures[TextureHandle(digest)] = texture
+	RESOURCE_MANAGER.textures[handle] = texture
 
-	return TextureHandle(digest)
-}
-
-resource_manager_delete :: proc {
-	resource_manager_delete_texture,
+	return handle
 }
 
 @(export)
@@ -74,6 +128,8 @@ resource_manager_delete_texture :: proc(handle: TextureHandle) {
 	texture_free(texture)
 	delete_key(&RESOURCE_MANAGER.textures, handle)
 }
+
+// General methods
 
 resource_manager_new :: proc() {
 	if RESOURCE_MANAGER != nil {
