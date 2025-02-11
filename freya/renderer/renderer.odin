@@ -16,8 +16,8 @@ renderer_initialize :: proc() {
 	RENDERER = new(Renderer)
 
 	RENDERER.no_material_shader = shader_new(
-		#load("../../shaders/vertex.glsl"),
-		#load("../../shaders/fragment.glsl"),
+		#load("../../shaders/textures_material_vertex.glsl"),
+		#load("../../shaders/textures_material_fragment.glsl"),
 	)
 
 	RENDERER.grid_shader = shader_new(
@@ -50,13 +50,20 @@ renderer_draw_model :: proc {
 
 renderer_draw_model_simple :: proc(
 	model: ^Model,
+	ambient_light: ^Light,
 	transform: ^engine.Transform,
+	view_pos: ^glm.vec3,
 	view_mat, proj_mat: ^glm.mat4,
 ) {
 	shader_use(RENDERER.no_material_shader)
 	shader_set_uniform(RENDERER.no_material_shader, "model", &transform.model_matrix)
 	shader_set_uniform(RENDERER.no_material_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.no_material_shader, "view", view_mat)
+
+	shader_set_uniform(RENDERER.no_material_shader, "light.position", &ambient_light.position)
+	shader_set_uniform(RENDERER.no_material_shader, "light.ambient", &ambient_light.ambient)
+	shader_set_uniform(RENDERER.no_material_shader, "light.diffuse", &ambient_light.diffuse)
+	shader_set_uniform(RENDERER.no_material_shader, "light.specular", &ambient_light.specular)
 
 	model_draw(model, RENDERER.no_material_shader)
 }

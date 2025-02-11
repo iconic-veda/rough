@@ -58,8 +58,6 @@ process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Mode
 		node := stack[len(stack) - 1]
 		pop(&stack)
 
-		// log.debug("Processing node: ", transmute(string)node.mName.data[:node.mName.length])
-
 		for i in 0 ..< node.mNumMeshes {
 			mesh_idx := node.mMeshes[i]
 			mesh := scene.mMeshes[mesh_idx]

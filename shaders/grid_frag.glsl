@@ -25,11 +25,11 @@ vec4 grid(vec3 frag_pos_3d, float scale) {
     float minimumz = min(derivative.y, 1);
     float minimumx = min(derivative.x, 1);
 
-    vec4 color = vec4(0.2, 0.2, 0.2, 1.0 - min(line, 1.0));
+    vec4 color = vec4(0.30, 0.30, 0.30, 1.0 - min(line, 1.0));
 
-    if (frag_pos_3d.x > -0.9 * minimumx && frag_pos_3d.x < 0.9 * minimumx)
+    if (frag_pos_3d.x > -0.1 * minimumx && frag_pos_3d.x < 0.1 * minimumx)
         color.z = 1.0;
-    if (frag_pos_3d.z > -0.9 * minimumz && frag_pos_3d.z < 0.9 * minimumz)
+    if (frag_pos_3d.z > -0.1 * minimumz && frag_pos_3d.z < 0.1 * minimumz)
         color.x = 1.0;
 
     return color;
@@ -58,11 +58,11 @@ void main() {
     float t = -near_point.y / (far_point.y - near_point.y);
     vec3 frag_pos_3d = near_point + t * (far_point - near_point);
 
-    // float fade = smoothstep(0.04, 0.0, compute_fade(frag_pos_3d));
-    float fade = max(0, 1.0 - compute_fade(frag_pos_3d));
+    float fade = smoothstep(0.04, 0.0, compute_fade(frag_pos_3d));
+    // float fade = max(0, 1.0 - compute_fade(frag_pos_3d));
 
     // This add multiple resolutions for the grid
-    FragColor = (grid(frag_pos_3d, 10) + grid(frag_pos_3d, 1)) * 0.25;
+    FragColor = (grid(frag_pos_3d, 10) + grid(frag_pos_3d, 1)) * 0.9;
     FragColor *= float(t > 0);
     FragColor *= fade;
 

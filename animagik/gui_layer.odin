@@ -126,7 +126,7 @@ update :: proc(dt: f64) {
 
 render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
-	renderer.clear_screen({0.68, 0.68, 0.68, 1.0})
+	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
 
 	{ 	// Render models
 		for ent in ecs.get_entities_with_components(
@@ -136,9 +136,17 @@ render :: proc() {
 			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
 			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
 
+			light := renderer.Light {
+				glm.vec3{0.0, 500.0, 500.0},
+				glm.vec3{0.2, 0.2, 0.2},
+				glm.vec3{0.5, 0.5, 0.5},
+				glm.vec3{1.0, 1.0, 1.0},
+			}
 			renderer.renderer_draw_model(
 				model^,
+				&light,
 				transform,
+				&camera_controller._position,
 				&camera_controller.view_mat,
 				&camera_controller.proj_mat,
 			)
