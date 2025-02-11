@@ -110,19 +110,32 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram, material: Mater
 	{ 	// Specular
 		specular, err := resource_manager_get_texture(material.specular_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.specular", 0)
+			shader_set_uniform(shader, "material.specular", 1)
 			gl.ActiveTexture(gl.TEXTURE0 + 1)
 			gl.BindTexture(gl.TEXTURE_2D, specular.id)
 		}
 	}
 
 	{ 	// Normal
-		normal, err := resource_manager_get_texture(material.normal_texture)
+		height, err := resource_manager_get_texture(material.height_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.normal", 0)
+			shader_set_uniform(shader, "material.height", 2)
 			gl.ActiveTexture(gl.TEXTURE0 + 2)
-			gl.BindTexture(gl.TEXTURE_2D, normal.id)
+			gl.BindTexture(gl.TEXTURE_2D, height.id)
 		}
+	}
+
+	{ 	// Ambient
+		ambient, err := resource_manager_get_texture(material.ambient_texture)
+		if err == ResourceManagerError.NoError {
+			shader_set_uniform(shader, "material.ambient", 3)
+			gl.ActiveTexture(gl.TEXTURE0 + 3)
+			gl.BindTexture(gl.TEXTURE_2D, ambient.id)
+		}
+	}
+
+	{ 	// Shininess
+		shader_set_uniform(shader, "material.shininess", material.shininess)
 	}
 
 

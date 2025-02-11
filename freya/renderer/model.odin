@@ -139,7 +139,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			continue
 		}
 
-		diffuse, specular, normal: TextureHandle = "", "", ""
+		diffuse, specular, height, ambient: TextureHandle = "", "", "", ""
 		// Get textures, NOTE: more than one texture per type is not supported
 		if assimp.get_material_textureCount(mat, assimp.TextureType.DIFFUSE) > 0 {
 			relative_path: assimp.String
@@ -197,7 +197,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 				{base_path, transmute(string)relative_path.data[:relative_path.length]},
 			)
 
-			specular = resource_manager_add(texture_path, TextureType.Diffuse)
+			specular = resource_manager_add(texture_path, TextureType.Specular)
 		}
 		if assimp.get_material_textureCount(mat, assimp.TextureType.HEIGHT) > 0 {
 			relative_path: assimp.String
@@ -226,7 +226,36 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 				{base_path, transmute(string)relative_path.data[:relative_path.length]},
 			)
 
-			normal = resource_manager_add(texture_path, TextureType.Diffuse)
+			height = resource_manager_add(texture_path, TextureType.Height)
+		}
+		if assimp.get_material_textureCount(mat, assimp.TextureType.AMBIENT) > 0 {
+			relative_path: assimp.String
+			mapping: assimp.TextureMapping
+			uvindex: u32
+			blend: f64
+			op: assimp.TextureOp
+			mapmode: assimp.TextureMapMode
+			if assimp.get_material_texture(
+				   mat,
+				   assimp.TextureType.AMBIENT,
+				   0,
+				   &relative_path,
+				   &mapping,
+				   &uvindex,
+				   &blend,
+				   &op,
+				   &mapmode,
+			   ) !=
+			   assimp.Return.SUCCESS {
+				log.error("Failed to get material texture")
+				continue
+			}
+
+			texture_path := filepath.join(
+				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+			)
+
+			ambient = resource_manager_add(texture_path, TextureType.Ambient)
 		}
 
 		name_buffer: [5]u8
@@ -240,7 +269,10 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			name_buffer[3],
 			name_buffer[4],
 		)
-		append(&model.materials, resource_manager_add(name, diffuse, specular, normal, shininess))
+		append(
+			&model.materials,
+			resource_manager_add(name, diffuse, specular, height, ambient, shininess),
+		)
 	}
 }
 

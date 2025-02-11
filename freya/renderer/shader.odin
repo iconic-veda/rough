@@ -34,6 +34,7 @@ shader_set_uniform :: proc {
 	_shader_set_uniform_bool,
 	_shader_set_uniform_int,
 	_shader_set_uniform_float,
+	_shader_set_uniform_f64,
 	_shader_set_uniform_vec2,
 	_shader_set_uniform_vec3,
 	_shader_set_uniform_mat4,
@@ -55,6 +56,12 @@ _shader_set_uniform_int :: proc(shader: ShaderProgram, name: string, value: i32)
 _shader_set_uniform_float :: proc(shader: ShaderProgram, name: string, value: f32) {
 	n := strings.unsafe_string_to_cstring(name)
 	gl.Uniform1f(gl.GetUniformLocation(shader, n), value)
+}
+
+@(export, private)
+_shader_set_uniform_f64 :: proc(shader: ShaderProgram, name: string, value: f64) {
+	n := strings.unsafe_string_to_cstring(name)
+	gl.Uniform1f(gl.GetUniformLocation(shader, n), f32(value))
 }
 
 @(export, private)

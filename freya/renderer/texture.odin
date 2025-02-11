@@ -18,8 +18,8 @@ Texture :: struct {
 TextureType :: enum {
 	Diffuse,
 	Specular,
-	Normal,
 	Height,
+	Ambient,
 }
 
 TextureError :: enum {
