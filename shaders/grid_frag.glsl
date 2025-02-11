@@ -58,8 +58,8 @@ void main() {
     float t = -near_point.y / (far_point.y - near_point.y);
     vec3 frag_pos_3d = near_point + t * (far_point - near_point);
 
-    float fade = smoothstep(0.04, 0.0, compute_fade(frag_pos_3d));
-    // float fade = max(0, 1.0 - compute_fade(frag_pos_3d));
+    // float fade = smoothstep(0.04, 0.0, compute_fade(frag_pos_3d));
+    float fade = max(0, 1.0 - compute_fade(frag_pos_3d));
 
     // This add multiple resolutions for the grid
     FragColor = (grid(frag_pos_3d, 10) + grid(frag_pos_3d, 1)) * 0.9;

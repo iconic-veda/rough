@@ -87,7 +87,7 @@ new_editor_camera_controller :: proc(
 		_distance = 10.0,
 		_right = {1.0, 0.0, 0.0},
 		_forward = {0.0, 0.0, -1.0},
-		_position = {0.0, 0.0, 10.0},
+		_position = {0.0, 0.0, 0.0},
 		_focus = {0.0, 0.0, 0.0},
 		_rotation_speed = 0.1,
 		_translation_speed = 0.005,

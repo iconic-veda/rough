@@ -101,8 +101,8 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	{ 	// Diffuse
 		diffuse, err := resource_manager_get_texture(material.diffuse_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.diffuse", 0)
 			gl.ActiveTexture(gl.TEXTURE0)
+			shader_set_uniform(shader, "material.diffuse", 0)
 			gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
 		}
 	}
@@ -110,8 +110,8 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	{ 	// Specular
 		specular, err := resource_manager_get_texture(material.specular_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.specular", 1)
 			gl.ActiveTexture(gl.TEXTURE0 + 1)
+			shader_set_uniform(shader, "material.specular", 1)
 			gl.BindTexture(gl.TEXTURE_2D, specular.id)
 		}
 	}
@@ -119,8 +119,8 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	{ 	// Normal
 		height, err := resource_manager_get_texture(material.height_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.height", 2)
 			gl.ActiveTexture(gl.TEXTURE0 + 2)
+			shader_set_uniform(shader, "material.height", 2)
 			gl.BindTexture(gl.TEXTURE_2D, height.id)
 		}
 	}
@@ -128,8 +128,8 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	{ 	// Ambient
 		ambient, err := resource_manager_get_texture(material.ambient_texture)
 		if err == ResourceManagerError.NoError {
-			shader_set_uniform(shader, "material.ambient", 3)
 			gl.ActiveTexture(gl.TEXTURE0 + 3)
+			shader_set_uniform(shader, "material.ambient", 3)
 			gl.BindTexture(gl.TEXTURE_2D, ambient.id)
 		}
 	}
@@ -139,13 +139,15 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	}
 
 
-	gl.ActiveTexture(gl.TEXTURE0)
-
 	gl.BindVertexArray(m._vao)
 	gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
-	gl.BindVertexArray(0)
 
-	assert(gl.GetError() == gl.NO_ERROR, "OpenGL error")
+	gl.BindVertexArray(0)
+	gl.ActiveTexture(gl.TEXTURE0)
+
+	if gl.GetError() != gl.NO_ERROR {
+		log.fatalf("OpenGL error %d", gl.GetError())
+	}
 }
 
 // Private mesh procedures
