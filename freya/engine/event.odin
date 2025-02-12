@@ -10,7 +10,11 @@ Event :: union {
 	MouseButtonReleaseEvent,
 	MouseMoveEvent,
 	MouseScrollEvent,
+
+	// ImGui Events
+	ImGuiViewportResizeEvent,
 }
+
 
 WindowResizeEvent :: struct {
 	width:  i32,
@@ -46,6 +50,13 @@ MouseMoveEvent :: struct {
 MouseScrollEvent :: struct {
 	x: f32,
 	y: f32,
+}
+
+// ImGui events
+
+ImGuiViewportResizeEvent :: struct {
+	width:  f32,
+	height: f32,
 }
 
 

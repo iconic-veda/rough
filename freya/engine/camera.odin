@@ -97,7 +97,7 @@ new_editor_camera_controller :: proc(
 
 editor_camera_on_event :: proc(controller: ^EditorCameraController, event: Event) {
 	#partial switch e in event {
-	case WindowResizeEvent:
+	case ImGuiViewportResizeEvent:
 		{
 			controller._aspect_ratio = f32(e.width) / f32(e.height)
 			camera_set_projection(

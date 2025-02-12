@@ -1,5 +1,7 @@
 package animagik
 
+import "core:log"
+
 import gui_panels "panels"
 
 import freya "../freya"
@@ -10,8 +12,6 @@ import glm "core:math/linalg/glsl"
 
 import ecs "../freya/vendor/odin-ecs"
 import im "../freya/vendor/odin-imgui"
-
-ASPECT_RATIO: f32 = 800.0 / 600.0
 
 camera_controller: engine.EditorCameraController
 viewport_fb: ^renderer.FrameBuffer
@@ -46,7 +46,7 @@ initialize :: proc() {
 		},
 	)
 
-	camera_controller = engine.new_editor_camera_controller(ASPECT_RATIO)
+	camera_controller = engine.new_editor_camera_controller(800.0 / 600.0)
 
 	viewport_fb = renderer.framebuffer_new(
 		800,
@@ -192,14 +192,25 @@ imgui_render :: proc() {
 			}
 			im.EndMenuBar()
 		}
-
 		im.End()
 	}
 
-	im.Begin("Viewport", nil)
-	win_width := im.GetContentRegionAvail().x
-	win_height := im.GetContentRegionAvail().y
-	renderer.framebuffer_rescale(viewport_fb, i32(win_width), i32(win_height))
+
+	im.PushStyleVarImVec2(im.StyleVar.WindowPadding, im.Vec2{0, 0})
+	im.Begin("Viewport")
+	content_region := im.GetContentRegionAvail()
+
+	@(static) win_width: f32 = 0
+	@(static) win_height: f32 = 0
+
+	if win_width != content_region.x || win_height != content_region.y {
+		win_width = content_region.x
+		win_height = content_region.y
+
+		on_event(engine.ImGuiViewportResizeEvent{win_width, win_height})
+		renderer.framebuffer_rescale(viewport_fb, i32(win_width), i32(win_height))
+	}
+
 	im.Image(
 		im.TextureID(uintptr(viewport_fb.texture.id)),
 		im.Vec2{win_width, win_height},
@@ -207,19 +218,16 @@ imgui_render :: proc() {
 		im.Vec2{1, 0},
 	)
 	im.End()
+	im.PopStyleVar()
 
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
 	}
+
 }
 
 on_event :: proc(ev: engine.Event) {
 	#partial switch e in ev {
-	case engine.WindowResizeEvent:
-		{
-			ASPECT_RATIO = f32(e.width) / f32(e.height)
-		}
-
 	case engine.KeyPressEvent:
 		{
 			if e.code == engine.KeyCode.P {

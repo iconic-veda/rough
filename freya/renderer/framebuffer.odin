@@ -69,6 +69,7 @@ framebuffer_rescale :: proc(fbo: ^FrameBuffer, width, height: i32) {
 
 framebuffer_bind :: proc(fbo: ^FrameBuffer) {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, fbo.id)
+	gl.Viewport(0, 0, fbo.width, fbo.height)
 }
 
 framebuffer_unbind :: proc() {
