@@ -132,6 +132,10 @@ window_poll_events :: proc() {
 }
 
 
-window_toggle_cursor :: proc(win: ^Window) {
-	glfw.SetInputMode(win.glfw_window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+window_toggle_cursor :: proc(win: ^Window, enabled: bool) {
+	if enabled {
+		glfw.SetInputMode(win.glfw_window, glfw.CURSOR, glfw.CURSOR_NORMAL)
+	} else {
+		glfw.SetInputMode(win.glfw_window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+	}
 }

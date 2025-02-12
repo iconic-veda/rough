@@ -20,6 +20,8 @@ scene_panel: ^gui_panels.ScenePanel
 
 entities_world: ecs.Context
 
+is_cursor_captured: bool = true
+
 GuiLayer :: struct {
 	using base: engine.Layer,
 }
@@ -231,7 +233,8 @@ on_event :: proc(ev: engine.Event) {
 	case engine.KeyPressEvent:
 		{
 			if e.code == engine.KeyCode.P {
-				engine.window_toggle_cursor(&engine.WINDOW)
+				engine.window_toggle_cursor(&engine.WINDOW, is_cursor_captured)
+				is_cursor_captured = !is_cursor_captured
 			}
 		}
 	}
