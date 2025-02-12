@@ -28,7 +28,6 @@ renderer_initialize :: proc() {
 }
 
 renderer_shutdown :: proc() {
-
 	shader_delete(RENDERER.no_material_shader)
 	shader_delete(RENDERER.grid_shader)
 

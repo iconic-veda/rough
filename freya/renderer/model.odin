@@ -17,15 +17,9 @@ Model :: struct {
 model_new :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
 
-	scene := assimp.import_file(
-		file_path,
-		u32(
-			assimp.PostProcessSteps.Triangulate |
-			assimp.PostProcessSteps.FlipUVs |
-			assimp.PostProcessSteps.GenSmoothNormals |
-			assimp.PostProcessSteps.CalcTangentSpace,
-		),
-	)
+	import_flags := get_import_flags_by_extension(file_path)
+	scene := assimp.import_file(file_path, u32(import_flags))
+
 	defer {
 		// assimp.release_import(scene)
 		assimp.free_scene(scene)
@@ -74,6 +68,10 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	vertices: []Vertex = make([]Vertex, mesh.mNumVertices)
 	for i in 0 ..< mesh.mNumVertices {
 		vertices[i].position = mesh.mVertices[i].xyz
+
+		if mesh.mColors[0] != nil {
+			vertices[i].color = mesh.mColors[0][i].rgb
+		}
 
 		if mesh.mNormals != nil {
 			vertices[i].normal = mesh.mNormals[i].xyz
@@ -311,4 +309,28 @@ model_draw :: proc(model: ^Model, shader: ShaderProgram) {
 	for &mesh in model.meshes {
 		mesh_draw_with_material(mesh, shader)
 	}
+}
+
+
+@(private)
+get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSteps {
+	flags: assimp.PostProcessSteps =
+		assimp.PostProcessSteps.Triangulate |
+		assimp.PostProcessSteps.JoinIdenticalVertices |
+		assimp.PostProcessSteps.GenNormals |
+		assimp.PostProcessSteps.CalcTangentSpace
+
+	ext := filepath.ext(file_path)
+	switch ext {
+	case ".obj":
+		flags |= assimp.PostProcessSteps.FlipUVs
+	case ".blend", ".dae", ".3ds", ".ase", ".ifc", ".xgl", ".zgl":
+	// flags |= assimp.PostProcessSteps.FlipUVs
+	case ".fbx":
+		flags |= assimp.PostProcessSteps.MakeLeftHanded
+	case ".gltf":
+	// flags |= assimp.PostProcessSteps.FlipWindingOrder
+	}
+
+	return flags
 }

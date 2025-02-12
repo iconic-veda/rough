@@ -21,6 +21,7 @@ scene_panel: ^gui_panels.ScenePanel
 entities_world: ecs.Context
 
 is_cursor_captured: bool = true
+is_wire_mode: bool = false
 
 GuiLayer :: struct {
 	using base: engine.Layer,
@@ -135,9 +136,9 @@ render :: proc() {
 			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
 
 			light := renderer.Light {
-				glm.vec3{0.0, 50.0, 10.0},
+				glm.vec3{0.0, 5.0, 5.0},
 				glm.vec3{0.2, 0.2, 0.2},
-				glm.vec3{0.9, 0.9, 0.9},
+				glm.vec3{1.0, 1.0, 1.0},
 				glm.vec3{0.2, 0.2, 0.2},
 			}
 			renderer.renderer_draw_model(
@@ -235,6 +236,11 @@ on_event :: proc(ev: engine.Event) {
 			if e.code == engine.KeyCode.P {
 				engine.window_toggle_cursor(&engine.WINDOW, is_cursor_captured)
 				is_cursor_captured = !is_cursor_captured
+			}
+
+			if e.code == engine.KeyCode.Space {
+				renderer.toggle_wire_mode(is_wire_mode)
+				is_wire_mode = !is_wire_mode
 			}
 		}
 	}

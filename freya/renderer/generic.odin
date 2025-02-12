@@ -93,3 +93,11 @@ toggle_depth_writing :: proc(enable: bool) {
 		gl.DepthMask(gl.FALSE)
 	}
 }
+
+toggle_wire_mode :: proc(enable: bool) {
+	if enable {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	} else {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	}
+}

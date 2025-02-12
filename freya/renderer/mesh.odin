@@ -10,7 +10,7 @@ import gl "vendor:OpenGL"
 Vertex :: struct {
 	position:   glm.vec3,
 	normal:     glm.vec3,
-	// color:      glm.vec3,
+	color:      glm.vec3,
 	tex_coords: glm.vec2,
 	tangent:    glm.vec3,
 	bitanget:   glm.vec3,
@@ -93,49 +93,58 @@ mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
 @(export)
 mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 	material, err := resource_manager_get(m.material)
-	if err != ResourceManagerError.NoError {
-		log.error("Failed to get material")
-		return
-	}
-
-	{ 	// Diffuse
-		diffuse, err := resource_manager_get_texture(material.diffuse_texture)
-		if err == ResourceManagerError.NoError {
-			gl.ActiveTexture(gl.TEXTURE0)
-			shader_set_uniform(shader, "material.diffuse", 0)
-			gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
+	if err == ResourceManagerError.NoError {
+		{ 	// Diffuse
+			diffuse, err := resource_manager_get_texture(material.diffuse_texture)
+			if err == ResourceManagerError.NoError {
+				gl.ActiveTexture(gl.TEXTURE0)
+				shader_set_uniform(shader, "material.diffuse", 0)
+				shader_set_uniform(shader, "useDiffuse", f32(1.0))
+				gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
+			} else {
+				shader_set_uniform(shader, "useDiffuse", f32(0.0))
+			}
 		}
-	}
 
-	{ 	// Specular
-		specular, err := resource_manager_get_texture(material.specular_texture)
-		if err == ResourceManagerError.NoError {
-			gl.ActiveTexture(gl.TEXTURE0 + 1)
-			shader_set_uniform(shader, "material.specular", 1)
-			gl.BindTexture(gl.TEXTURE_2D, specular.id)
+		{ 	// Specular
+			specular, err := resource_manager_get_texture(material.specular_texture)
+			if err == ResourceManagerError.NoError {
+				gl.ActiveTexture(gl.TEXTURE0 + 1)
+				shader_set_uniform(shader, "material.specular", 1)
+				shader_set_uniform(shader, "useSpecular", f32(1.0))
+				gl.BindTexture(gl.TEXTURE_2D, specular.id)
+			} else {
+				shader_set_uniform(shader, "useSpecular", f32(0.0))
+			}
 		}
-	}
 
-	{ 	// Normal
-		height, err := resource_manager_get_texture(material.height_texture)
-		if err == ResourceManagerError.NoError {
-			gl.ActiveTexture(gl.TEXTURE0 + 2)
-			shader_set_uniform(shader, "material.height", 2)
-			gl.BindTexture(gl.TEXTURE_2D, height.id)
+		{ 	// Normal
+			height, err := resource_manager_get_texture(material.height_texture)
+			if err == ResourceManagerError.NoError {
+				gl.ActiveTexture(gl.TEXTURE0 + 2)
+				shader_set_uniform(shader, "material.height", 2)
+				shader_set_uniform(shader, "useHeight", f32(1.0))
+				gl.BindTexture(gl.TEXTURE_2D, height.id)
+			} else {
+				shader_set_uniform(shader, "useHeight", f32(0.0))
+			}
 		}
-	}
 
-	{ 	// Ambient
-		ambient, err := resource_manager_get_texture(material.ambient_texture)
-		if err == ResourceManagerError.NoError {
-			gl.ActiveTexture(gl.TEXTURE0 + 3)
-			shader_set_uniform(shader, "material.ambient", 3)
-			gl.BindTexture(gl.TEXTURE_2D, ambient.id)
+		{ 	// Ambient
+			ambient, err := resource_manager_get_texture(material.ambient_texture)
+			if err == ResourceManagerError.NoError {
+				gl.ActiveTexture(gl.TEXTURE0 + 3)
+				shader_set_uniform(shader, "material.ambient", 3)
+				shader_set_uniform(shader, "useAmbient", f32(1.0))
+				gl.BindTexture(gl.TEXTURE_2D, ambient.id)
+			} else {
+				shader_set_uniform(shader, "useAmbient", f32(0.0))
+			}
 		}
-	}
 
-	{ 	// Shininess
-		shader_set_uniform(shader, "material.shininess", material.shininess)
+		{ 	// Shininess
+			shader_set_uniform(shader, "material.shininess", material.shininess)
+		}
 	}
 
 
@@ -174,24 +183,41 @@ _mesh_setup_buffers :: proc(m: ^Mesh) {
 	gl.VertexArrayVertexBuffer(m._vao, m._binding_index, m._vbo, 0, size_of(Vertex))
 	gl.VertexArrayElementBuffer(m._vao, m._ebo)
 
+	// Position
 	gl.EnableVertexArrayAttrib(m._vao, 0)
 	gl.VertexArrayAttribFormat(m._vao, 0, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, position)))
 	gl.VertexArrayAttribBinding(m._vao, 0, m._binding_index)
 
+	// Normal
 	gl.EnableVertexArrayAttrib(m._vao, 1)
 	gl.VertexArrayAttribFormat(m._vao, 1, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, normal)))
 	gl.VertexArrayAttribBinding(m._vao, 1, m._binding_index)
 
+	// Color
 	gl.EnableVertexArrayAttrib(m._vao, 2)
+	gl.VertexArrayAttribFormat(m._vao, 2, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, color)))
+	gl.VertexArrayAttribBinding(m._vao, 2, m._binding_index)
+
+	// TexCoords
+	gl.EnableVertexArrayAttrib(m._vao, 3)
 	gl.VertexArrayAttribFormat(
 		m._vao,
-		2,
+		3,
 		2,
 		gl.FLOAT,
 		gl.FALSE,
 		u32(offset_of(Vertex, tex_coords)),
 	)
-	gl.VertexArrayAttribBinding(m._vao, 2, m._binding_index)
+	gl.VertexArrayAttribBinding(m._vao, 3, m._binding_index)
+
+	// Tangent
+	gl.EnableVertexArrayAttrib(m._vao, 4)
+	gl.VertexArrayAttribFormat(m._vao, 4, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, tangent)))
+	gl.VertexArrayAttribBinding(m._vao, 4, m._binding_index)
+
+	gl.EnableVertexArrayAttrib(m._vao, 5)
+	gl.VertexArrayAttribFormat(m._vao, 5, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, bitanget)))
+	gl.VertexArrayAttribBinding(m._vao, 5, m._binding_index)
 
 	gl.BindVertexArray(0)
 }

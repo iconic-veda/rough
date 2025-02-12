@@ -1,21 +1,24 @@
 #version 460 core
+out vec4 FragColor;
 
-in vec2 frag_tex_coord;
-in vec3 frag_pos;
-in vec3 frag_normal;
+in VS_OUT {
+    vec3 FragPos;
+    vec3 FragColor;
+    vec2 TexCoords;
+    mat3 TBN;
+} fs_in;
 
 struct Material {
-    sampler2D ambient;
-    sampler2D diffuse;
-    sampler2D specular;
+    sampler2D diffuse; // Diffuse (albedo) map
+    sampler2D ambient; // Ambient map
+    sampler2D specular; // Specular map
+    sampler2D normal; // Normal map
+    sampler2D height; // Height map for parallax mapping
     float shininess;
-
-    sampler2D height;
 };
 
 struct Light {
     vec3 position;
-
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -23,29 +26,64 @@ struct Light {
 
 uniform Material material;
 uniform Light light;
-uniform vec3 view_pos;
+uniform vec3 viewPos;
 
-out vec4 FragColor;
+uniform float useDiffuse;
+uniform float useAmbient;
+uniform float useSpecular;
+uniform float useNormal;
+
+uniform float useHeight;
+uniform float heightScale;
+
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDirTangent)
+{
+    float heightValue = texture(material.height, texCoords).r;
+    vec2 p = viewDirTangent.xy / viewDirTangent.z * (heightValue * heightScale);
+    return texCoords - p;
+}
 
 void main()
 {
-    // ambient
-    vec3 ambient = light.ambient * texture(material.ambient, frag_tex_coord).rgb;
+    vec2 texCoords = fs_in.TexCoords;
 
-    // diffuse
-    // vec3 norm = normalize(frag_normal);
-    vec3 norm = texture(material.height, frag_tex_coord).rgb;
-    norm = normalize(norm * 2.0 - 1.0);
+    if (useHeight > 0.0) {
+        vec3 viewDirTangent = normalize(fs_in.TBN * (viewPos - fs_in.FragPos));
+        texCoords = ParallaxMapping(fs_in.TexCoords, viewDirTangent);
+    }
 
-    vec3 lightDir = normalize(light.position - frag_pos);
+    vec3 defaultColor = vec3(1.0);
+    vec3 diffuseTex = texture(material.diffuse, texCoords).rgb;
+    vec3 ambientTex = texture(material.ambient, texCoords).rgb;
+    vec3 specularTex = texture(material.specular, texCoords).rgb;
+
+    // vec3 diffuseColor = mix(defaultColor, diffuseTex, useDiffuse);
+    // vec3 ambientColor = mix(defaultColor, ambientTex, useAmbient);
+    // vec3 specularColor = mix(defaultColor, specularTex, useSpecular);
+
+    vec3 diffuseColor = diffuseTex;
+    vec3 ambientColor = ambientTex;
+    vec3 specularColor = specularTex;
+
+    vec3 normTangent;
+    if (useNormal > 0.0) {
+        normTangent = texture(material.normal, texCoords).rgb;
+        normTangent = normalize(normTangent * 2.0 - 1.0);
+    } else {
+        normTangent = vec3(0.0, 0.0, 1.0);
+    }
+    vec3 norm = normalize(fs_in.TBN * normTangent);
+
+    vec3 ambient = light.ambient * ambientColor;
+
+    vec3 lightDir = normalize(light.position - fs_in.FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, frag_tex_coord).rgb;
+    vec3 diffuse = light.diffuse * diff * diffuseColor;
 
-    // specular
-    vec3 viewDir = normalize(view_pos - frag_pos);
+    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.specular, frag_tex_coord).rgb;
+    vec3 specular = light.specular * spec * specularColor;
 
     vec3 result = ambient + diffuse + specular;
     FragColor = vec4(result, 1.0);
