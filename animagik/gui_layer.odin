@@ -63,7 +63,7 @@ initialize :: proc() {
 			model_component := renderer.model_new("assets/models/vampire/dancing_vampire.dae")
 			ecs.add_component(&entities_world, ent, model_component)
 			t := engine.Transform {
-				glm.vec3{10.0, 0.0, 0.0},
+				glm.vec3{0.0, 0.0, 0.0},
 				glm.vec3{0.0, 0.0, 0.0},
 				glm.vec3{0.04, 0.04, 0.04},
 				glm.mat4Translate({0.0, 0.0, 0.0}),
@@ -83,9 +83,9 @@ initialize :: proc() {
 			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
 			ecs.add_component(&entities_world, ent, model_component)
 			t := engine.Transform {
-				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{1, 1, 1},
+				glm.vec3{0.0, 6, -1.5},
+				glm.vec3{0.0, 3.142, 0.0},
+				glm.vec3{0.8, 0.8, 0.8},
 				glm.mat4Translate({0.0, 0.0, 0.0}),
 			}
 			t.model_matrix =
