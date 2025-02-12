@@ -112,44 +112,83 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 				}
 			}
 		}
+	}
+	im.End()
 
-		{ 	// MODEL COMPONENT
-			im.SeparatorText("Model")
-			model, err := ecs.get_component(
-				panel.entities_world,
-				panel.selected_entity,
-				^renderer.Model,
-			)
-			if err == ecs.ECS_Error.NO_ERROR {
-				for handle in model^.materials {
-					material, err := renderer.resource_manager_get_material(handle)
 
-					im.Text("Name : %s", strings.unsafe_string_to_cstring(material.name))
+	im.Begin("Material")
+	{
+		model, err := ecs.get_component(
+			panel.entities_world,
+			panel.selected_entity,
+			^renderer.Model,
+		)
+		if err == ecs.ECS_Error.NO_ERROR {
+			for handle in model^.materials {
+				material, err := renderer.resource_manager_get_material(handle)
 
-					im.Text(
-						"Diffuse texture : %s",
-						strings.unsafe_string_to_cstring(string(material.diffuse_texture)),
+				im.Text("Material Name : %s", strings.unsafe_string_to_cstring(material.name))
+				im.Separator()
+
+				diffuse, differr := renderer.resource_manager_get_texture(material.diffuse_texture)
+				if differr == renderer.ResourceManagerError.NoError {
+					im.Text("Diffuse texture")
+					im.Image(
+						im.TextureID(uintptr(diffuse.id)),
+						{100, 100},
+						{0, 1},
+						{1, 0},
+						{1, 1, 1, 1},
+						{0, 0, 0, 0},
 					)
-
-					im.Text(
-						"Specular texture : %s",
-						strings.unsafe_string_to_cstring(string(material.specular_texture)),
-					)
-
-					im.Text(
-						"Height texture : %s",
-						strings.unsafe_string_to_cstring(string(material.height_texture)),
-					)
-
-					im.Text(
-						"Ambient texture : %s",
-						strings.unsafe_string_to_cstring(string(material.ambient_texture)),
-					)
-
-					im.Text("Material - shininess : %f", material.shininess)
-
-					im.Separator()
 				}
+
+				specular, specerr := renderer.resource_manager_get_texture(
+					material.specular_texture,
+				)
+				if specerr == renderer.ResourceManagerError.NoError {
+					im.Text("Specular texture")
+					im.Image(
+						im.TextureID(uintptr(specular.id)),
+						{100, 100},
+						{0, 1},
+						{1, 0},
+						{1, 1, 1, 1},
+						{0, 0, 0, 0},
+					)
+				}
+
+				height, heighterr := renderer.resource_manager_get_texture(material.height_texture)
+				if heighterr == renderer.ResourceManagerError.NoError {
+					im.Text("Height texture")
+					im.Image(
+						im.TextureID(uintptr(height.id)),
+						{100, 100},
+						{0, 1},
+						{1, 0},
+						{1, 1, 1, 1},
+						{0, 0, 0, 0},
+					)
+				}
+
+				ambient, ambienterr := renderer.resource_manager_get_texture(
+					material.ambient_texture,
+				)
+				if ambienterr == renderer.ResourceManagerError.NoError {
+					im.Text("Ambient texture")
+					im.Image(
+						im.TextureID(uintptr(ambient.id)),
+						{100, 100},
+						{0, 1},
+						{1, 0},
+						{1, 1, 1, 1},
+						{0, 0, 0, 0},
+					)
+				}
+
+				im.Text("Material - shininess : %f", material.shininess)
+
+				im.Separator()
 			}
 		}
 	}

@@ -134,9 +134,9 @@ render :: proc() {
 
 			light := renderer.Light {
 				glm.vec3{0.0, 50.0, 10.0},
-				glm.vec3{0.4, 0.4, 0.4},
-				glm.vec3{0.7, 0.7, 0.7},
-				glm.vec3{0.4, 0.4, 0.4},
+				glm.vec3{0.2, 0.2, 0.2},
+				glm.vec3{0.9, 0.9, 0.9},
+				glm.vec3{0.2, 0.2, 0.2},
 			}
 			renderer.renderer_draw_model(
 				model^,

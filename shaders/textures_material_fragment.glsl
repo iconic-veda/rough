@@ -30,10 +30,13 @@ out vec4 FragColor;
 void main()
 {
     // ambient
-    vec3 ambient = light.ambient * texture(material.diffuse, frag_tex_coord).rgb;
+    vec3 ambient = light.ambient * texture(material.ambient, frag_tex_coord).rgb;
 
     // diffuse
-    vec3 norm = normalize(frag_normal);
+    // vec3 norm = normalize(frag_normal);
+    vec3 norm = texture(material.height, frag_tex_coord).rgb;
+    norm = normalize(norm * 2.0 - 1.0);
+
     vec3 lightDir = normalize(light.position - frag_pos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = light.diffuse * diff * texture(material.diffuse, frag_tex_coord).rgb;

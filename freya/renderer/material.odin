@@ -27,5 +27,9 @@ material_new :: proc(
 }
 
 material_free :: proc(m: ^Material) {
+	resource_manager_delete_texture(m.diffuse_texture)
+	resource_manager_delete_texture(m.specular_texture)
+	resource_manager_delete_texture(m.height_texture)
+	resource_manager_delete_texture(m.ambient_texture)
 	free(m)
 }

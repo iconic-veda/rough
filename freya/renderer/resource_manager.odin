@@ -154,3 +154,7 @@ resource_manager_free :: proc() {
 resource_manager_get_textures :: proc() -> map[TextureHandle]^Texture {
 	return RESOURCE_MANAGER.textures
 }
+
+resource_manager_get_materials :: proc() -> map[MaterialHandle]^Material {
+	return RESOURCE_MANAGER.materials
+}
