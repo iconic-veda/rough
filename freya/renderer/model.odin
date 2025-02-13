@@ -327,7 +327,7 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 	case ".blend", ".dae", ".3ds", ".ase", ".ifc", ".xgl", ".zgl":
 	// flags |= assimp.PostProcessSteps.FlipUVs
 	case ".fbx":
-		flags |= assimp.PostProcessSteps.MakeLeftHanded
+	// flags |= assimp.PostProcessSteps.MakeLeftHanded
 	case ".gltf":
 	// flags |= assimp.PostProcessSteps.FlipWindingOrder
 	}

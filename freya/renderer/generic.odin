@@ -24,7 +24,7 @@ initialize_context :: proc() {
 @(export)
 clear_screen :: proc(color: glm.vec4) {
 	gl.ClearColor(color.r, color.g, color.b, color.a)
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
 }
 
 @(export)
@@ -69,25 +69,27 @@ enable_capabilities :: proc(cap: []OpenGlCapability) {
 			gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		} else if c == .DEPTH_TEST {
 			// Last element drawn are in from of all other fragments
-			// gl.DepthFunc(gl.ALWAYS)
+			gl.DepthFunc(gl.LESS)
 		} else if c == .CULL_FACE {
 			gl.CullFace(gl.BACK)
 			gl.FrontFace(gl.CCW)
 		} else if c == .DEBUG_OUTPUT {
 			gl.Enable(gl.DEBUG_OUTPUT)
 			gl.DebugMessageCallback(debug_callback, nil)
+		} else if c == .STENCIL_TEST {
+			gl.Enable(gl.STENCIL_TEST)
+			gl.StencilFunc(gl.NOTEQUAL, 1, 0xFF)
+			gl.StencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
 		}
 	}
 }
 
-@(export)
 disable_capabilities :: proc(cap: []OpenGlCapability) {
 	for c in cap {
 		gl.Disable(u32(c))
 	}
 }
 
-@(export)
 toggle_depth_writing :: proc(enable: bool) {
 	if enable {
 		gl.DepthMask(gl.TRUE)
@@ -102,4 +104,21 @@ toggle_wire_mode :: proc(enable: bool) {
 	} else {
 		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	}
+}
+
+enable_stencil_testing :: proc() {
+	gl.StencilFunc(gl.ALWAYS, 1, 0xFF)
+	gl.StencilMask(0xFF)
+}
+
+disable_stencil_testing :: proc() {
+	gl.StencilFunc(gl.NOTEQUAL, 1, 0xFF)
+	gl.StencilMask(0x00)
+	// gl.Disable(gl.DEPTH_TEST)
+}
+
+reset_stencil_testing :: proc() {
+	gl.StencilMask(0xFF)
+	gl.StencilFunc(gl.ALWAYS, 1, 0xFF)
+	// gl.Enable(gl.DEPTH_TEST)
 }

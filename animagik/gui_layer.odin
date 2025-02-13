@@ -141,14 +141,26 @@ render :: proc() {
 				glm.vec3{1.0, 1.0, 1.0},
 				glm.vec3{0.2, 0.2, 0.2},
 			}
-			renderer.renderer_draw_model(
-				model^,
-				&light,
-				transform,
-				&camera_controller._position,
-				&camera_controller.view_mat,
-				&camera_controller.proj_mat,
-			)
+
+			if scene_panel.selected_entity == ent {
+				renderer.renderer_draw_model_outlined(
+					model^,
+					&light,
+					transform,
+					&camera_controller._position,
+					&camera_controller.view_mat,
+					&camera_controller.proj_mat,
+				)
+			} else {
+				renderer.renderer_draw_model(
+					model^,
+					&light,
+					transform,
+					&camera_controller._position,
+					&camera_controller.view_mat,
+					&camera_controller.proj_mat,
+				)
+			}
 		}
 	}
 
