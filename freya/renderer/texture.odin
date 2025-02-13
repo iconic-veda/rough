@@ -29,12 +29,20 @@ TextureError :: enum {
 }
 
 texture_new :: proc(file_path: string, type: TextureType) -> (^Texture, TextureError) {
-	if strings.has_suffix(file_path, ".exr") {
-		log.errorf("EXR textures are not supported yet, path: %s\n", file_path)
+
+	data: [1024]u8
+
+	arena: mem.Arena
+	mem.arena_init(&arena, data[:])
+	alloc := mem.arena_allocator(&arena)
+
+	path, allocation := strings.replace(file_path, "\\", "/", -1, alloc)
+	if strings.has_suffix(path, ".exr") {
+		log.errorf("EXR textures are not supported yet, path: %s\n", path)
 		return nil, TextureError.NotSupported
 		// return texture_new_with_exr(file_path, type)
 	} else {
-		return texture_new_with_stb(file_path, type)
+		return texture_new_with_stb(path, type)
 	}
 }
 

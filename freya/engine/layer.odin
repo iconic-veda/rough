@@ -22,6 +22,11 @@ layer_stk_new :: proc() -> ^LayerStack {
 	return stack
 }
 
+layer_stk_free :: proc(stack: ^LayerStack) {
+	delete(stack.layers)
+	free(stack)
+}
+
 layer_stk_push_layer :: proc(stack: ^LayerStack, layer: ^Layer) {
 	append(&stack.layers, layer^)
 }

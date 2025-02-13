@@ -36,6 +36,7 @@ mesh_free :: proc(m: ^Mesh) {
 	gl.DeleteVertexArrays(1, &m._vao)
 	gl.DeleteBuffers(1, &m._vbo)
 	gl.DeleteBuffers(1, &m._ebo)
+	delete_string(string(m.material))
 	free(m, m._allocator) // Is it ok ?
 }
 

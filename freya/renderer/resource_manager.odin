@@ -71,8 +71,14 @@ resource_manager_add_material :: proc(
 		return handle
 	}
 
-	material := material_new(name, diffuse, specular, height, ambient, shininess)
-	RESOURCE_MANAGER.materials[handle] = material
+	RESOURCE_MANAGER.materials[handle] = material_new(
+		name,
+		diffuse,
+		specular,
+		height,
+		ambient,
+		shininess,
+	)
 
 	return handle
 }
@@ -121,7 +127,7 @@ resource_manager_add_texture :: proc(path: string, type: TextureType) -> Texture
 resource_manager_delete_texture :: proc(handle: TextureHandle) {
 	texture, ok := RESOURCE_MANAGER.textures[handle]
 	if !ok {
-		log.errorf("Shader not found: {}", handle)
+		log.errorf("Texture already deleted: {}", handle)
 		return
 	}
 
@@ -146,6 +152,7 @@ resource_manager_free :: proc() {
 	}
 
 	delete(RESOURCE_MANAGER.textures)
+	delete(RESOURCE_MANAGER.materials)
 	free(RESOURCE_MANAGER)
 
 	RESOURCE_MANAGER = nil

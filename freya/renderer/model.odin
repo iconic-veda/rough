@@ -66,6 +66,7 @@ process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Mode
 
 extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	vertices: []Vertex = make([]Vertex, mesh.mNumVertices)
+	defer delete(vertices)
 	for i in 0 ..< mesh.mNumVertices {
 		vertices[i].position = mesh.mVertices[i].xyz
 
@@ -98,6 +99,7 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 		index_count += mesh.mFaces[i].mNumIndices
 	}
 	indices: []u32 = make([]u32, index_count)
+	defer delete(indices)
 
 	idx: u32 = 0
 	for i in 0 ..< mesh.mNumFaces {
@@ -124,14 +126,8 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	}
 
 
-	append(
-		&model.meshes,
-		mesh_new(
-			vertices,
-			indices,
-			MaterialHandle(strings.clone(transmute(string)mat_name.data[:mat_name.length])),
-		),
-	)
+	name := string(mat_name.data[:mat_name.length])
+	append(&model.meshes, mesh_new(vertices, indices, MaterialHandle(strings.clone(name))))
 }
 
 extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string) {
@@ -300,7 +296,12 @@ model_free :: proc(model: ^Model) {
 	for &mesh in model.meshes {
 		mesh_free(mesh)
 	}
+
+	for &material in model.materials {
+		resource_manager_delete(material)
+	}
 	delete(model.meshes)
+	delete(model.materials)
 	free(model)
 }
 

@@ -31,5 +31,6 @@ material_free :: proc(m: ^Material) {
 	resource_manager_delete_texture(m.specular_texture)
 	resource_manager_delete_texture(m.height_texture)
 	resource_manager_delete_texture(m.ambient_texture)
+	delete_string(m.name)
 	free(m)
 }

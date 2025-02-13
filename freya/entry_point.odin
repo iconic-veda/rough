@@ -66,5 +66,6 @@ start_engine :: proc(game: Game) {
 	}
 
 	engn.layer_stk_shutdown_layers(GAME.layer_stack)
+	engn.layer_stk_free(GAME.layer_stack)
 	engn.shutdown_imgui()
 }

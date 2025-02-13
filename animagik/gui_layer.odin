@@ -111,6 +111,14 @@ shutdown :: proc() {
 
 	{ 	// Clear entities world
 		// TODO: Get all entities and free them in the correct way
+
+		for ent in ecs.get_entities_with_components(
+			&entities_world,
+			{^renderer.Model, engine.Transform},
+		) {
+			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
+			renderer.model_free(model^)
+		}
 		ecs.deinit_ecs(&entities_world)
 	}
 
