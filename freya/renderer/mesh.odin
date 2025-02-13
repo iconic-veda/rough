@@ -97,9 +97,9 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 		{ 	// Diffuse
 			diffuse, err := resource_manager_get_texture(material.diffuse_texture)
 			if err == ResourceManagerError.NoError {
-				gl.ActiveTexture(gl.TEXTURE0)
 				shader_set_uniform(shader, "material.diffuse", 0)
 				shader_set_uniform(shader, "useDiffuse", f32(1.0))
+				gl.ActiveTexture(gl.TEXTURE0)
 				gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
 			} else {
 				shader_set_uniform(shader, "useDiffuse", f32(0.0))
@@ -109,21 +109,21 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 		{ 	// Specular
 			specular, err := resource_manager_get_texture(material.specular_texture)
 			if err == ResourceManagerError.NoError {
-				gl.ActiveTexture(gl.TEXTURE0 + 1)
 				shader_set_uniform(shader, "material.specular", 1)
 				shader_set_uniform(shader, "useSpecular", f32(1.0))
+				gl.ActiveTexture(gl.TEXTURE0 + 1)
 				gl.BindTexture(gl.TEXTURE_2D, specular.id)
 			} else {
 				shader_set_uniform(shader, "useSpecular", f32(0.0))
 			}
 		}
 
-		{ 	// Normal
+		{ 	// Height
 			height, err := resource_manager_get_texture(material.height_texture)
 			if err == ResourceManagerError.NoError {
-				gl.ActiveTexture(gl.TEXTURE0 + 2)
 				shader_set_uniform(shader, "material.height", 2)
 				shader_set_uniform(shader, "useHeight", f32(1.0))
+				gl.ActiveTexture(gl.TEXTURE0 + 2)
 				gl.BindTexture(gl.TEXTURE_2D, height.id)
 			} else {
 				shader_set_uniform(shader, "useHeight", f32(0.0))
@@ -133,9 +133,9 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 		{ 	// Ambient
 			ambient, err := resource_manager_get_texture(material.ambient_texture)
 			if err == ResourceManagerError.NoError {
-				gl.ActiveTexture(gl.TEXTURE0 + 3)
 				shader_set_uniform(shader, "material.ambient", 3)
 				shader_set_uniform(shader, "useAmbient", f32(1.0))
+				gl.ActiveTexture(gl.TEXTURE0 + 3)
 				gl.BindTexture(gl.TEXTURE_2D, ambient.id)
 			} else {
 				shader_set_uniform(shader, "useAmbient", f32(0.0))

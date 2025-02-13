@@ -60,6 +60,8 @@ debug_callback :: proc "c" (
 
 @(export)
 enable_capabilities :: proc(cap: []OpenGlCapability) {
+	gl.Enable(gl.MULTISAMPLE)
+
 	for c in cap {
 		gl.Enable(u32(c))
 		if c == .BLEND {

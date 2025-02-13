@@ -136,7 +136,7 @@ render :: proc() {
 			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
 
 			light := renderer.Light {
-				glm.vec3{0.0, 5.0, 5.0},
+				glm.vec3{0.0, 10.0, 0.0},
 				glm.vec3{0.2, 0.2, 0.2},
 				glm.vec3{1.0, 1.0, 1.0},
 				glm.vec3{0.2, 0.2, 0.2},
@@ -238,7 +238,7 @@ on_event :: proc(ev: engine.Event) {
 				is_cursor_captured = !is_cursor_captured
 			}
 
-			if e.code == engine.KeyCode.Space {
+			if e.code == engine.KeyCode.K {
 				renderer.toggle_wire_mode(is_wire_mode)
 				is_wire_mode = !is_wire_mode
 			}

@@ -57,14 +57,11 @@ void main()
     vec3 ambientTex = texture(material.ambient, texCoords).rgb;
     vec3 specularTex = texture(material.specular, texCoords).rgb;
 
-    // vec3 diffuseColor = mix(defaultColor, diffuseTex, useDiffuse);
-    // vec3 ambientColor = mix(defaultColor, ambientTex, useAmbient);
-    // vec3 specularColor = mix(defaultColor, specularTex, useSpecular);
+    vec3 diffuseColor = mix(defaultColor, diffuseTex, useDiffuse);
+    vec3 ambientColor = mix(defaultColor, ambientTex, useAmbient);
+    vec3 specularColor = mix(defaultColor, specularTex, useSpecular);
 
-    vec3 diffuseColor = diffuseTex;
-    vec3 ambientColor = ambientTex;
-    vec3 specularColor = specularTex;
-
+    // Normal mapping
     vec3 normTangent;
     if (useNormal > 0.0) {
         normTangent = texture(material.normal, texCoords).rgb;
@@ -74,12 +71,20 @@ void main()
     }
     vec3 norm = normalize(fs_in.TBN * normTangent);
 
-    vec3 ambient = light.ambient * ambientColor;
+    // Ambient lighting
+    vec3 ambient;
+    if (useAmbient > 0.0) {
+        ambient = light.ambient * ambientColor;
+    } else {
+        ambient = light.ambient * diffuseColor;
+    }
 
+    // Diffuse lighting
     vec3 lightDir = normalize(light.position - fs_in.FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = light.diffuse * diff * diffuseColor;
 
+    // Specular lighting
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);

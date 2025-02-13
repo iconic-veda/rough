@@ -41,6 +41,8 @@ window_create :: proc(width, height: i32, name: cstring, event_callback: EventCa
 	glfw.MakeContextCurrent(window)
 	glfw.SwapInterval(1)
 
+	glfw.WindowHint(glfw.SAMPLES, 4)
+
 	//  Callbacks
 	props := new(WindowProperties)
 	props.width = width
