@@ -3,14 +3,23 @@ package renderer
 import "core:crypto"
 import "core:fmt"
 import "core:log"
+import glm "core:math/linalg/glsl"
+import "core:mem"
 import "core:path/filepath"
 import "core:strings"
 
 import "../vendor/assimp"
 
+BoneInfo :: struct {
+	id:     u32,
+	offset: glm.mat4,
+}
+
 Model :: struct {
-	meshes:    [dynamic]^Mesh,
-	materials: [dynamic]MaterialHandle,
+	meshes:        [dynamic]^Mesh,
+	materials:     [dynamic]MaterialHandle,
+	bone_info_map: map[string]BoneInfo,
+	bone_count:    u32,
 }
 
 @(export)
@@ -110,8 +119,7 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 		}
 	}
 
-	// TODO: Extract bones
-
+	extract_bones(model, mesh, scene, vertices)
 
 	mat_name: assimp.String
 	if assimp.get_material_string(
@@ -128,6 +136,56 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 
 	name := string(mat_name.data[:mat_name.length])
 	append(&model.meshes, mesh_new(vertices, indices, MaterialHandle(strings.clone(name))))
+}
+
+extract_bones :: proc(
+	model: ^Model,
+	mesh: ^assimp.Mesh,
+	scene: ^assimp.Scene,
+	vertices: []Vertex,
+) {
+	if mesh.mNumBones == 0 {
+		return
+	}
+
+	log.debugf("Extracting bones for mesh: {}", mesh.mName.data[:mesh.mName.length])
+
+	for bone_idx in 0 ..< mesh.mNumBones {
+		bone_id: i32 = -1
+		bone_name := string(mesh.mBones[bone_idx].mName.data[:mesh.mBones[bone_idx].mName.length])
+		if _, ok := model.bone_info_map[bone_name]; !ok {
+			bone_info := BoneInfo{}
+			bone_info.id = model.bone_count
+			bone_info.offset = transmute(glm.mat4)mesh.mBones[bone_idx].mOffsetMatrix
+			model.bone_info_map[bone_name] = bone_info
+			bone_id = i32(model.bone_count)
+			model.bone_count += 1
+		} else {
+			bone_id = i32(model.bone_info_map[bone_name].id)
+		}
+		assert(bone_id != -1)
+
+		num_weights := mesh.mBones[bone_idx].mNumWeights
+		weights: [^]assimp.VertexWeight = mesh.mBones[bone_idx].mWeights
+		if weights == nil {
+			continue
+		}
+
+		for weight_idx in 0 ..< num_weights {
+			vertex_id := weights[weight_idx].mVertexId
+			weight := weights[weight_idx].mWeight
+			assert(vertex_id < u32(len(vertices)))
+
+			for k in 0 ..< MAX_BONE_INFLUENCES {
+				if vertices[vertex_id].bones_ids[k] < 0.0 {
+					vertices[vertex_id].bones_ids[k] = bone_id
+					vertices[vertex_id].weights[k] = weight
+					break
+				}
+			}
+		}
+
+	}
 }
 
 extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string) {
@@ -290,7 +348,6 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 	}
 }
 
-
 @(export)
 model_free :: proc(model: ^Model) {
 	for &mesh in model.meshes {
@@ -300,6 +357,8 @@ model_free :: proc(model: ^Model) {
 	for &material in model.materials {
 		resource_manager_delete(material)
 	}
+
+	delete_map(model.bone_info_map)
 	delete(model.meshes)
 	delete(model.materials)
 	free(model)

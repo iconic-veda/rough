@@ -6,6 +6,7 @@ import "core:mem"
 import glm "core:math/linalg/glsl"
 import gl "vendor:OpenGL"
 
+MAX_BONE_INFLUENCES :: 4
 
 Vertex :: struct {
 	position:   glm.vec3,
@@ -14,6 +15,10 @@ Vertex :: struct {
 	tex_coords: glm.vec2,
 	tangent:    glm.vec3,
 	bitanget:   glm.vec3,
+
+	// Bone stuff
+	bones_ids:  [MAX_BONE_INFLUENCES]i32,
+	weights:    [MAX_BONE_INFLUENCES]f32,
 }
 
 Mesh :: struct {
@@ -55,40 +60,6 @@ mesh_new_explicit :: proc(
 	m._allocator = allocator
 	_mesh_setup_buffers(m)
 	return m
-}
-
-@(export)
-mesh_draw :: proc(m: ^Mesh, shader: ShaderProgram) {
-	log.error("mesh_draw not implemented")
-	// for texture_handle, idx in m.textures {
-	// 	texture, err := resource_manager_get(texture_handle)
-	// 	if err != ResourceManagerError.NoError {
-	// 		continue
-	// 	}
-
-	// 	name: string
-	// 	switch texture.type {
-	// 	case TextureType.Diffuse:
-	// 		name = "material.diffuse"
-	// 	case TextureType.Specular:
-	// 		name = "material.specular"
-	// 	case TextureType.Normal:
-	// 		name = "material.normal"
-	// 	case TextureType.Height:
-	// 		name = "material.height"
-	// 	}
-
-	// 	shader_set_uniform(shader, name, i32(idx))
-	// 	gl.ActiveTexture(gl.TEXTURE0 + u32(idx))
-	// 	gl.BindTexture(gl.TEXTURE_2D, texture.id)
-	// }
-	// gl.ActiveTexture(gl.TEXTURE0)
-
-	// gl.BindVertexArray(m._vao)
-	// gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
-	// gl.BindVertexArray(0)
-
-	// assert(gl.GetError() == gl.NO_ERROR, "OpenGL error")
 }
 
 @(export)
@@ -216,9 +187,22 @@ _mesh_setup_buffers :: proc(m: ^Mesh) {
 	gl.VertexArrayAttribFormat(m._vao, 4, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, tangent)))
 	gl.VertexArrayAttribBinding(m._vao, 4, m._binding_index)
 
+	// Bitangent
 	gl.EnableVertexArrayAttrib(m._vao, 5)
 	gl.VertexArrayAttribFormat(m._vao, 5, 3, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, bitanget)))
 	gl.VertexArrayAttribBinding(m._vao, 5, m._binding_index)
+
+	// Bones
+	gl.EnableVertexArrayAttrib(m._vao, 6)
+	gl.VertexArrayAttribFormat(m._vao, 6, 4, gl.INT, gl.FALSE, u32(offset_of(Vertex, bones_ids)))
+	// gl.VertexAttribIPointer(index, size, type, stride, pointer)
+	gl.VertexArrayAttribBinding(m._vao, 6, m._binding_index)
+
+	// Bone Weights
+	gl.EnableVertexArrayAttrib(m._vao, 7)
+	gl.VertexArrayAttribFormat(m._vao, 7, 4, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, weights)))
+	gl.VertexArrayAttribBinding(m._vao, 7, m._binding_index)
+
 
 	gl.BindVertexArray(0)
 }
