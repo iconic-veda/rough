@@ -27,6 +27,8 @@ model_new :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
 
 	import_flags := get_import_flags_by_extension(file_path)
+
+	// assimp.set_import_property_integer("AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS", 0)
 	scene := assimp.import_file(file_path, u32(import_flags))
 
 	defer {
@@ -55,7 +57,6 @@ process_root_node :: proc(root: ^assimp.Node, scene: ^assimp.Scene, model: ^Mode
 	stack: [dynamic]^assimp.Node = make([dynamic]^assimp.Node)
 	defer delete(stack)
 	append(&stack, root)
-
 
 	for len(stack) > 0 {
 		node := stack[len(stack) - 1]
@@ -166,8 +167,10 @@ extract_bones :: proc(
 		assert(bone_id != -1)
 
 		num_weights := mesh.mBones[bone_idx].mNumWeights
-		weights: [^]assimp.VertexWeight = mesh.mBones[bone_idx].mWeights
+		weights := mesh.mBones[bone_idx].mWeights
+
 		if weights == nil {
+			log.errorf("No weights for bone: {}", bone_name)
 			continue
 		}
 
@@ -378,7 +381,9 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 		assimp.PostProcessSteps.Triangulate |
 		assimp.PostProcessSteps.JoinIdenticalVertices |
 		assimp.PostProcessSteps.GenNormals |
-		assimp.PostProcessSteps.CalcTangentSpace
+		assimp.PostProcessSteps.CalcTangentSpace |
+		assimp.PostProcessSteps.ValidateDataStructure |
+		assimp.PostProcessSteps.LimitBoneWeights
 
 	ext := filepath.ext(file_path)
 	switch ext {

@@ -6,7 +6,7 @@ when ODIN_OS == .Windows {
 	// when ODIN_DEBUG do foreign import assimp "../lib/assimp-vc143-mtd.lib" else do foreign import assimp "../lib/assimp-vc143-mt.lib"
 	foreign import assimp "../compiled/assimp-vc143-mt.lib"
 } else when ODIN_OS == .Linux {
-	foreign import assimp "system:assimp"
+	foreign import assimp "../compiled/libassimp.so"
 } else {
 	#panic(true)
 }
