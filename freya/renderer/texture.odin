@@ -20,6 +20,7 @@ TextureType :: enum {
 	Specular,
 	Height,
 	Ambient,
+	Normals,
 }
 
 TextureError :: enum {

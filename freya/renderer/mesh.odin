@@ -102,12 +102,24 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 			}
 		}
 
+		{ 	// Normals
+			height, err := resource_manager_get_texture(material.normal_texture)
+			if err == ResourceManagerError.NoError {
+				shader_set_uniform(shader, "material.normal", 3)
+				shader_set_uniform(shader, "useNormal", f32(1.0))
+				gl.ActiveTexture(gl.TEXTURE0 + 3)
+				gl.BindTexture(gl.TEXTURE_2D, height.id)
+			} else {
+				shader_set_uniform(shader, "useNormal", f32(0.0))
+			}
+		}
+
 		{ 	// Ambient
 			ambient, err := resource_manager_get_texture(material.ambient_texture)
 			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.ambient", 3)
+				shader_set_uniform(shader, "material.ambient", 4)
 				shader_set_uniform(shader, "useAmbient", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0 + 3)
+				gl.ActiveTexture(gl.TEXTURE0 + 4)
 				gl.BindTexture(gl.TEXTURE_2D, ambient.id)
 			} else {
 				shader_set_uniform(shader, "useAmbient", f32(0.0))

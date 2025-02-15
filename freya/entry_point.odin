@@ -28,7 +28,12 @@ event_callback :: proc(ev: engn.Event) {
 start_engine :: proc(game: Game) {
 	GAME = game
 
-	logger := log.create_console_logger()
+	when ODIN_DEBUG {
+		log.info("Running in debug mode")
+		logger := log.create_console_logger(log.Level.Debug)
+	} else {
+		logger := log.create_console_logger(log.Level.Error)
+	}
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
 

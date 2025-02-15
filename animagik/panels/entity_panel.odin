@@ -158,6 +158,19 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 					)
 				}
 
+				normal, normalerr := renderer.resource_manager_get_texture(material.normal_texture)
+				if normalerr == renderer.ResourceManagerError.NoError {
+					im.Text("Normal texture")
+					im.Image(
+						im.TextureID(uintptr(normal.id)),
+						{100, 100},
+						{0, 1},
+						{1, 0},
+						{1, 1, 1, 1},
+						{0, 0, 0, 0},
+					)
+				}
+
 				height, heighterr := renderer.resource_manager_get_texture(material.height_texture)
 				if heighterr == renderer.ResourceManagerError.NoError {
 					im.Text("Height texture")

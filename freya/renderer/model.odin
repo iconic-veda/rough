@@ -27,8 +27,6 @@ model_new :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
 
 	import_flags := get_import_flags_by_extension(file_path)
-
-	// assimp.set_import_property_integer("AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS", 0)
 	scene := assimp.import_file(file_path, u32(import_flags))
 
 	defer {
@@ -146,6 +144,7 @@ extract_bones :: proc(
 	vertices: []Vertex,
 ) {
 	if mesh.mNumBones == 0 {
+		log.debug("No bones found for mesh: {}", mesh.mName.data[:mesh.mName.length])
 		return
 	}
 
@@ -172,6 +171,8 @@ extract_bones :: proc(
 		if weights == nil {
 			log.errorf("No weights for bone: {}", bone_name)
 			continue
+		} else {
+			log.infof("Bone: {}, Weights: {}", bone_name, num_weights)
 		}
 
 		for weight_idx in 0 ..< num_weights {
@@ -214,7 +215,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			continue
 		}
 
-		diffuse, specular, height, ambient: TextureHandle = "", "", "", ""
+		diffuse, specular, height, ambient, normal: TextureHandle = "", "", "", "", ""
 		// Get textures, NOTE: more than one texture per type is not supported
 		if assimp.get_material_textureCount(mat, assimp.TextureType.DIFFUSE) > 0 {
 			relative_path: assimp.String
@@ -303,6 +304,36 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 
 			height = resource_manager_add(texture_path, TextureType.Height)
 		}
+		if assimp.get_material_textureCount(mat, assimp.TextureType.NORMALS) > 0 {
+			relative_path: assimp.String
+			mapping: assimp.TextureMapping
+			uvindex: u32
+			blend: f64
+			op: assimp.TextureOp
+			mapmode: assimp.TextureMapMode
+			if assimp.get_material_texture(
+				   mat,
+				   assimp.TextureType.NORMALS,
+				   0,
+				   &relative_path,
+				   &mapping,
+				   &uvindex,
+				   &blend,
+				   &op,
+				   &mapmode,
+			   ) !=
+			   assimp.Return.SUCCESS {
+				log.error("Failed to get material texture")
+				continue
+			}
+			texture_path := filepath.join(
+				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+			)
+
+			normal = resource_manager_add(texture_path, TextureType.Normals)
+		}
+
+
 		if assimp.get_material_textureCount(mat, assimp.TextureType.AMBIENT) > 0 {
 			relative_path: assimp.String
 			mapping: assimp.TextureMapping
@@ -344,6 +375,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 				diffuse,
 				specular,
 				height,
+				normal,
 				ambient,
 				shininess,
 			),
@@ -382,8 +414,8 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 		assimp.PostProcessSteps.JoinIdenticalVertices |
 		assimp.PostProcessSteps.GenNormals |
 		assimp.PostProcessSteps.CalcTangentSpace |
-		assimp.PostProcessSteps.ValidateDataStructure |
-		assimp.PostProcessSteps.LimitBoneWeights
+		assimp.PostProcessSteps.ValidateDataStructure
+	// assimp.PostProcessSteps.LimitBoneWeights
 
 	ext := filepath.ext(file_path)
 	switch ext {
