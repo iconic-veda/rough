@@ -87,6 +87,7 @@ resource_manager_add_material :: proc(
 resource_manager_delete_material :: proc(handle: MaterialHandle) {
 	material, ok := RESOURCE_MANAGER.materials[handle]
 	if !ok {
+		log.warnf("Material already deleted: {}", handle)
 		return
 	}
 
@@ -128,7 +129,7 @@ resource_manager_add_texture :: proc(path: string, type: TextureType) -> Texture
 resource_manager_delete_texture :: proc(handle: TextureHandle) {
 	texture, ok := RESOURCE_MANAGER.textures[handle]
 	if !ok {
-		log.errorf("Texture already deleted: {}", handle)
+		log.warnf("Texture already deleted: {}", handle)
 		return
 	}
 

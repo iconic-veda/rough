@@ -42,6 +42,22 @@ model_new :: proc(file_path: string) -> ^Model {
 		return nil
 	}
 
+	if scene.mFlags & u32(assimp.SceneFlags.VALIDATED) != 0 {
+		log.warn("Model is not validated")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.VALIDATION_WARNING) != 0 {
+		log.warn("Model has validation warnings")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.NON_VERBOSE_FORMAT) != 0 {
+		log.warn("Model is in a non-verbose format")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.FLAGS_TERRAIN) != 0 {
+		log.warn("Model is a terrain")
+	}
+
 	base_path := filepath.dir(file_path)
 
 	model := new(Model)
@@ -144,7 +160,6 @@ extract_bones :: proc(
 	vertices: []Vertex,
 ) {
 	if mesh.mNumBones == 0 {
-		log.debug("No bones found for mesh: {}", mesh.mName.data[:mesh.mName.length])
 		return
 	}
 
@@ -169,10 +184,8 @@ extract_bones :: proc(
 		weights := mesh.mBones[bone_idx].mWeights
 
 		if weights == nil {
-			log.errorf("No weights for bone: {}", bone_name)
+			log.warnf("No weights for bone: {}", bone_name)
 			continue
-		} else {
-			log.infof("Bone: {}, Weights: {}", bone_name, num_weights)
 		}
 
 		for weight_idx in 0 ..< num_weights {
@@ -332,8 +345,6 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 
 			normal = resource_manager_add(texture_path, TextureType.Normals)
 		}
-
-
 		if assimp.get_material_textureCount(mat, assimp.TextureType.AMBIENT) > 0 {
 			relative_path: assimp.String
 			mapping: assimp.TextureMapping
@@ -364,9 +375,9 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			ambient = resource_manager_add(texture_path, TextureType.Ambient)
 		}
 
-		if shininess == 0.0 && diffuse == "" && specular == "" && height == "" && ambient == "" {
-			continue
-		}
+		// if shininess == 0.0 && diffuse == "" && specular == "" && height == "" && ambient == "" {
+		// continue
+		// }
 
 		append(
 			&model.materials,
@@ -411,16 +422,24 @@ model_draw :: proc(model: ^Model, shader: ShaderProgram) {
 get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSteps {
 	flags: assimp.PostProcessSteps =
 		assimp.PostProcessSteps.Triangulate |
-		assimp.PostProcessSteps.JoinIdenticalVertices |
-		assimp.PostProcessSteps.GenNormals |
+		assimp.PostProcessSteps.GenSmoothNormals |
 		assimp.PostProcessSteps.CalcTangentSpace |
-		assimp.PostProcessSteps.ValidateDataStructure
-	// assimp.PostProcessSteps.LimitBoneWeights
+		assimp.PostProcessSteps.SplitLargeMeshes |
+		assimp.PostProcessSteps.ValidateDataStructure |
+		assimp.PostProcessSteps.LimitBoneWeights |
+		assimp.PostProcessSteps.RemoveRedundantMaterials |
+		assimp.PostProcessSteps.FindInvalidData |
+		assimp.PostProcessSteps.GenUVCoords |
+		assimp.PostProcessSteps.TransformUVCoords |
+		assimp.PostProcessSteps.FindDegenerates |
+		assimp.PostProcessSteps.JoinIdenticalVertices |
+		assimp.PostProcessSteps.ImproveCacheLocality |
+		assimp.PostProcessSteps.OptimizeGraph
 
 	ext := filepath.ext(file_path)
 	switch ext {
 	case ".obj":
-		flags |= assimp.PostProcessSteps.FlipUVs
+	// flags |= assimp.PostProcessSteps.FlipUVs
 	case ".blend", ".dae", ".3ds", ".ase", ".ifc", ".xgl", ".zgl":
 	// flags |= assimp.PostProcessSteps.FlipUVs
 	case ".fbx":

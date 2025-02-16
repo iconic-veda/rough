@@ -6,7 +6,8 @@ when ODIN_OS == .Windows {
 	// when ODIN_DEBUG do foreign import assimp "../lib/assimp-vc143-mtd.lib" else do foreign import assimp "../lib/assimp-vc143-mt.lib"
 	foreign import assimp "../compiled/assimp-vc143-mt.lib"
 } else when ODIN_OS == .Linux {
-	foreign import assimp "../compiled/libassimp.so"
+	// foreign import assimp "../compiled/libassimp.so"
+	foreign import assimp "system:assimp"
 } else {
 	#panic(true)
 }
@@ -397,15 +398,19 @@ aiFace :: struct {
 	mIndices:    [^]u32,
 }
 
+aiReal :: f32
+
 aiVertexWeight :: struct {
 	mVertexId: u32,
-	mWeight:   f32,
+	mWeight:   aiReal,
 }
 
 aiBone :: struct {
 	mName:         aiString,
 	mNumWeights:   u32,
-	mWeights:      [^]^aiVertexWeight,
+	mArmature:     ^aiNode,
+	mNode:         ^aiNode,
+	mWeights:      [^]aiVertexWeight,
 	mOffsetMatrix: aiMatrix4x4,
 }
 

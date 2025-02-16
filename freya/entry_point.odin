@@ -32,7 +32,7 @@ start_engine :: proc(game: Game) {
 		log.info("Running in debug mode")
 		logger := log.create_console_logger(log.Level.Debug)
 	} else {
-		logger := log.create_console_logger(log.Level.Error)
+		logger := log.create_console_logger(log.Level.Warning)
 	}
 	context.logger = logger
 	defer log.destroy_console_logger(logger)
