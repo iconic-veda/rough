@@ -1,6 +1,6 @@
 package animagik
 
-import "core:log"
+import "core:fmt"
 
 import gui_panels "panels"
 
@@ -61,12 +61,18 @@ initialize :: proc() {
 	{ 	// TODO: Remove this code, only to try gui
 		{
 			ent := ecs.create_entity(&entities_world)
-			model_component := renderer.model_new("assets/models/vampire/dancing_vampire.dae")
+			model_component, animation := renderer.model_new_with_anim(
+				"assets/models/tarisland_-_dragon_high_poly/scene.gltf", // "assets/models/vampire/dancing_vampire.dae",//
+			)
+
+			animator_component := renderer.animator_new(animation)
 			ecs.add_component(&entities_world, ent, model_component)
+			ecs.add_component(&entities_world, ent, animator_component)
+
 			t := engine.Transform {
 				glm.vec3{0.0, 0.0, 0.0},
 				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{0.04, 0.04, 0.04},
+				glm.vec3{0.004, 0.004, 0.004},
 				glm.mat4Translate({0.0, 0.0, 0.0}),
 			}
 			t.model_matrix =
@@ -76,28 +82,28 @@ initialize :: proc() {
 				glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
 				glm.mat4Scale(t.scale)
 			ecs.add_component(&entities_world, ent, t)
-			ecs.add_component(&entities_world, ent, engine.Name("Vampire"))
+			ecs.add_component(&entities_world, ent, engine.Name("Dragon"))
 		}
 
-		{
-			ent := ecs.create_entity(&entities_world)
-			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
-			ecs.add_component(&entities_world, ent, model_component)
-			t := engine.Transform {
-				glm.vec3{0.0, 6, -1.5},
-				glm.vec3{0.0, 3.142, 0.0},
-				glm.vec3{0.8, 0.8, 0.8},
-				glm.mat4Translate({0.0, 0.0, 0.0}),
-			}
-			t.model_matrix =
-				glm.mat4Translate(t.position) *
-				glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
-				glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
-				glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
-				glm.mat4Scale(t.scale)
-			ecs.add_component(&entities_world, ent, t)
-			ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
-		}
+		// {
+		// 	ent := ecs.create_entity(&entities_world)
+		// 	model_component := renderer.model_new("assets/models/backpack/backpack.obj")
+		// 	ecs.add_component(&entities_world, ent, model_component)
+		// 	t := engine.Transform {
+		// 		glm.vec3{0.0, 6, -1.5},
+		// 		glm.vec3{0.0, 3.142, 0.0},
+		// 		glm.vec3{0.8, 0.8, 0.8},
+		// 		glm.mat4Translate({0.0, 0.0, 0.0}),
+		// 	}
+		// 	t.model_matrix =
+		// 		glm.mat4Translate(t.position) *
+		// 		glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
+		// 		glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
+		// 		glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
+		// 		glm.mat4Scale(t.scale)
+		// 	ecs.add_component(&entities_world, ent, t)
+		// 	ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
+		// }
 	}
 
 
@@ -129,6 +135,11 @@ shutdown :: proc() {
 
 update :: proc(dt: f64) {
 	engine.camera_on_update(&camera_controller, dt)
+
+	for ent in ecs.get_entities_with_components(&entities_world, {^renderer.Animator}) {
+		animator, _ := ecs.get_component(&entities_world, ent, ^renderer.Animator)
+		renderer.animator_update_animation(animator^, dt)
+	}
 }
 
 render :: proc() {
@@ -138,9 +149,10 @@ render :: proc() {
 	{ 	// Render models
 		for ent in ecs.get_entities_with_components(
 			&entities_world,
-			{^renderer.Model, engine.Transform},
+			{^renderer.Model, ^renderer.Animator, engine.Transform},
 		) {
 			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
+			animator, err := ecs.get_component(&entities_world, ent, ^renderer.Animator)
 			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
 
 			light := renderer.Light {
@@ -154,6 +166,7 @@ render :: proc() {
 				renderer.renderer_draw_model_outlined(
 					model^,
 					&light,
+					animator^,
 					transform,
 					&camera_controller._position,
 					&camera_controller.view_mat,
@@ -163,6 +176,7 @@ render :: proc() {
 				renderer.renderer_draw_model(
 					model^,
 					&light,
+					animator^,
 					transform,
 					&camera_controller._position,
 					&camera_controller.view_mat,
@@ -170,6 +184,43 @@ render :: proc() {
 				)
 			}
 		}
+
+		// for ent in ecs.get_entities_with_components(
+		// 	&entities_world,
+		// 	{^renderer.Model, engine.Transform},
+		// ) {
+		// 	model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
+		// 	transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
+
+		// 	light := renderer.Light {
+		// 		glm.vec3{0.0, 10.0, 0.0},
+		// 		glm.vec3{0.2, 0.2, 0.2},
+		// 		glm.vec3{1.0, 1.0, 1.0},
+		// 		glm.vec3{0.2, 0.2, 0.2},
+		// 	}
+
+		// 	if scene_panel.selected_entity == ent {
+		// 		renderer.renderer_draw_model_outlined(
+		// 			model^,
+		// 			&light,
+		// 			nil,
+		// 			transform,
+		// 			&camera_controller._position,
+		// 			&camera_controller.view_mat,
+		// 			&camera_controller.proj_mat,
+		// 		)
+		// 	} else {
+		// 		renderer.renderer_draw_model(
+		// 			model^,
+		// 			&light,
+		// 			nil,
+		// 			transform,
+		// 			&camera_controller._position,
+		// 			&camera_controller.view_mat,
+		// 			&camera_controller.proj_mat,
+		// 		)
+		// 	}
+		// }
 	}
 
 	renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
@@ -246,7 +297,6 @@ imgui_render :: proc() {
 	{ 	// Gui panels
 		gui_panels.scene_panel_render(scene_panel)
 	}
-
 }
 
 on_event :: proc(ev: engine.Event) {

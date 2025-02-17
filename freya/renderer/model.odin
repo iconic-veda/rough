@@ -8,12 +8,7 @@ import "core:mem"
 import "core:path/filepath"
 import "core:strings"
 
-import "../vendor/assimp"
-
-BoneInfo :: struct {
-	id:     u32,
-	offset: glm.mat4,
-}
+import assimp "../vendor/odin-assimp"
 
 Model :: struct {
 	meshes:        [dynamic]^Mesh,
@@ -22,7 +17,22 @@ Model :: struct {
 	bone_count:    u32,
 }
 
-@(export)
+AssimpNodeData :: struct {
+	name:           string,
+	children_count: u32,
+	transformation: glm.mat4,
+	children:       [dynamic]AssimpNodeData,
+}
+
+Animation :: struct {
+	duration:        f64,
+	tick_per_second: f64,
+	root_node:       AssimpNodeData,
+	bones:           [dynamic]^Bone,
+	bone_info_map:   map[string]BoneInfo,
+}
+
+
 model_new :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
 
@@ -92,6 +102,12 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	vertices: []Vertex = make([]Vertex, mesh.mNumVertices)
 	defer delete(vertices)
 	for i in 0 ..< mesh.mNumVertices {
+
+		for j in 0 ..< MAX_BONE_INFLUENCES {
+			vertices[i].bones_ids[j] = -1
+			vertices[i].weights[j] = 0.0
+		}
+
 		vertices[i].position = mesh.mVertices[i].xyz
 
 		if mesh.mColors[0] != nil {
@@ -167,16 +183,16 @@ extract_bones :: proc(
 
 	for bone_idx in 0 ..< mesh.mNumBones {
 		bone_id: i32 = -1
-		bone_name := string(mesh.mBones[bone_idx].mName.data[:mesh.mBones[bone_idx].mName.length])
+		bone_name := assimp.string_clone_from_ai_string(&mesh.mBones[bone_idx].mName)
 		if _, ok := model.bone_info_map[bone_name]; !ok {
-			bone_info := BoneInfo{}
-			bone_info.id = model.bone_count
-			bone_info.offset = transmute(glm.mat4)mesh.mBones[bone_idx].mOffsetMatrix
-			model.bone_info_map[bone_name] = bone_info
+			model.bone_info_map[bone_name] = BoneInfo {
+				id     = i32(model.bone_count),
+				offset = assimp.matrix_convert(mesh.mBones[bone_idx].mOffsetMatrix),
+			}
 			bone_id = i32(model.bone_count)
 			model.bone_count += 1
 		} else {
-			bone_id = i32(model.bone_info_map[bone_name].id)
+			bone_id = model.bone_info_map[bone_name].id
 		}
 		assert(bone_id != -1)
 
@@ -194,7 +210,7 @@ extract_bones :: proc(
 			assert(vertex_id < u32(len(vertices)))
 
 			for k in 0 ..< MAX_BONE_INFLUENCES {
-				if vertices[vertex_id].bones_ids[k] < 0.0 {
+				if vertices[vertex_id].bones_ids[k] < 0 {
 					vertices[vertex_id].bones_ids[k] = bone_id
 					vertices[vertex_id].weights[k] = weight
 					break
@@ -254,7 +270,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			}
 
 			texture_path := filepath.join(
-				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
 			)
 
 			diffuse = resource_manager_add(texture_path, TextureType.Diffuse)
@@ -283,7 +299,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			}
 
 			texture_path := filepath.join(
-				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
 			)
 
 			specular = resource_manager_add(texture_path, TextureType.Specular)
@@ -312,7 +328,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			}
 
 			texture_path := filepath.join(
-				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
 			)
 
 			height = resource_manager_add(texture_path, TextureType.Height)
@@ -340,7 +356,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 				continue
 			}
 			texture_path := filepath.join(
-				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
 			)
 
 			normal = resource_manager_add(texture_path, TextureType.Normals)
@@ -369,7 +385,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 			}
 
 			texture_path := filepath.join(
-				{base_path, transmute(string)relative_path.data[:relative_path.length]},
+				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
 			)
 
 			ambient = resource_manager_add(texture_path, TextureType.Ambient)
@@ -382,7 +398,7 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 		append(
 			&model.materials,
 			resource_manager_add(
-				strings.clone(transmute(string)mat_name.data[:mat_name.length]),
+				assimp.string_clone_from_ai_string(&mat_name),
 				diffuse,
 				specular,
 				height,
@@ -424,9 +440,9 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 		assimp.PostProcessSteps.Triangulate |
 		assimp.PostProcessSteps.GenSmoothNormals |
 		assimp.PostProcessSteps.CalcTangentSpace |
-		assimp.PostProcessSteps.SplitLargeMeshes |
 		assimp.PostProcessSteps.ValidateDataStructure |
 		assimp.PostProcessSteps.LimitBoneWeights |
+		assimp.PostProcessSteps.SplitLargeMeshes |
 		assimp.PostProcessSteps.RemoveRedundantMaterials |
 		assimp.PostProcessSteps.FindInvalidData |
 		assimp.PostProcessSteps.GenUVCoords |
@@ -449,4 +465,125 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 	}
 
 	return flags
+}
+
+
+// Animation ===================================================================
+
+model_new_with_anim :: proc(file_path: string) -> (^Model, ^Animation) {
+	log.infof("Loading model: {}", file_path)
+
+	import_flags := get_import_flags_by_extension(file_path)
+	scene := assimp.import_file(file_path, u32(import_flags))
+
+	defer {
+		// assimp.release_import(scene)
+		assimp.free_scene(scene)
+		log.info("Model loaded, unload model's scene completed!")
+	}
+
+	if scene == nil ||
+	   scene.mFlags & u32(assimp.SceneFlags.INCOMPLETE) != 0 ||
+	   scene.mRootNode == nil {
+		log.error("Failed to load model: ", file_path)
+		return nil, nil
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.VALIDATED) != 0 {
+		log.warn("Model is not validated")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.VALIDATION_WARNING) != 0 {
+		log.warn("Model has validation warnings")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.NON_VERBOSE_FORMAT) != 0 {
+		log.warn("Model is in a non-verbose format")
+	}
+
+	if scene.mFlags & u32(assimp.SceneFlags.FLAGS_TERRAIN) != 0 {
+		log.warn("Model is a terrain")
+	}
+
+	base_path := filepath.dir(file_path)
+
+	model := new(Model)
+	extract_materials(model, scene, base_path)
+	process_root_node(scene.mRootNode, scene, model)
+
+	animation := new(Animation)
+	animation.duration = scene.mAnimations[0].mDuration
+	animation.tick_per_second = scene.mAnimations[0].mTicksPerSecond
+	animation.root_node = AssimpNodeData {
+		children = make([dynamic]AssimpNodeData),
+	}
+	animation.bones = make([dynamic]^Bone)
+
+
+	read_hierarchy_data(scene.mRootNode, &animation.root_node)
+	read_missing_bones(animation, scene.mAnimations[0], model)
+
+	return model, animation
+}
+
+@(private)
+read_missing_bones :: proc(self: ^Animation, animation: ^assimp.Animation, model: ^Model) {
+	size := animation.mNumChannels
+
+	for i in 0 ..< size {
+		channel := animation.mChannels[i]
+		bone_name := assimp.string_clone_from_ai_string(&channel.mNodeName)
+
+		if _, ok := model.bone_info_map[bone_name]; !ok {
+			model.bone_info_map[bone_name] = BoneInfo {
+				id     = i32(model.bone_count),
+				offset = glm.mat4(1.0),
+			}
+			model.bone_count += 1
+		}
+
+		append(&self.bones, bone_new(bone_name, model.bone_info_map[bone_name].id, channel))
+	}
+
+	self.bone_info_map = model.bone_info_map
+}
+
+@(private)
+read_hierarchy_data :: proc(src: ^assimp.Node, dst: ^AssimpNodeData) {
+	assert(src != nil)
+	assert(string(src.mName.data[:src.mName.length]) != "")
+
+	dst.name = assimp.string_clone_from_ai_string(&src.mName)
+	dst.transformation = assimp.matrix_convert(src.mTransformation)
+	dst.children_count = src.mNumChildren
+
+	for i in 0 ..< src.mNumChildren {
+		child := AssimpNodeData {
+			children = make([dynamic]AssimpNodeData),
+		}
+		read_hierarchy_data(src.mChildren[i], &child)
+		append(&dst.children, child)
+	}
+}
+
+anim_find_bone :: proc(self: ^Animation, name: string) -> ^Bone {
+	for &bone in self.bones {
+		if bone.name == name {
+			return bone
+		}
+	}
+	return nil
+}
+animation_free :: proc(animation: ^Animation) {
+	for &bone in animation.bones {
+		bone_free(bone)
+	}
+
+	for &data in animation.root_node.children {
+		delete(data.name)
+	}
+
+	delete_map(animation.bone_info_map)
+	delete(animation.bones)
+	free(animation)
 }

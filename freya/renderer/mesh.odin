@@ -207,12 +207,13 @@ _mesh_setup_buffers :: proc(m: ^Mesh) {
 	// Bones
 	gl.EnableVertexArrayAttrib(m._vao, 6)
 	gl.VertexArrayAttribFormat(m._vao, 6, 4, gl.INT, gl.FALSE, u32(offset_of(Vertex, bones_ids)))
-	// gl.VertexAttribIPointer(index, size, type, stride, pointer)
+	// gl.VertexAttribIPointer(6, 4, gl.INT, size_of(Vertex), offset_of(Vertex, bones_ids))
 	gl.VertexArrayAttribBinding(m._vao, 6, m._binding_index)
 
 	// Bone Weights
 	gl.EnableVertexArrayAttrib(m._vao, 7)
 	gl.VertexArrayAttribFormat(m._vao, 7, 4, gl.FLOAT, gl.FALSE, u32(offset_of(Vertex, weights)))
+	// gl.VertexAttribPointer(7, 4, gl.FLOAT, gl.FALSE, size_of(Vertex), offset_of(Vertex, weights))
 	gl.VertexArrayAttribBinding(m._vao, 7, m._binding_index)
 
 

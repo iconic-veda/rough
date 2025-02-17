@@ -1,6 +1,8 @@
 package renderer
 
+import "core:fmt"
 import glm "core:math/linalg/glsl"
+import "core:strings"
 
 import engine "../engine"
 
@@ -52,6 +54,7 @@ renderer_draw_grid :: proc(view_mat, proj_mat: ^glm.mat4) {
 renderer_draw_model :: proc(
 	model: ^Model,
 	ambient_light: ^Light,
+	animator: ^Animator,
 	transform: ^engine.Transform,
 	view_pos: ^glm.vec3,
 	view_mat, proj_mat: ^glm.mat4,
@@ -66,12 +69,31 @@ renderer_draw_model :: proc(
 	shader_set_uniform(RENDERER.material_shader, "light.diffuse", &ambient_light.diffuse)
 	shader_set_uniform(RENDERER.material_shader, "light.specular", &ambient_light.specular)
 
+
+	if animator != nil {
+		transforms := animator.final_bone_matrices
+		for i in 0 ..< len(transforms) {
+			builder := strings.builder_make()
+			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_int(&builder, i)
+			strings.write_string(&builder, "]")
+
+			uniform_name := strings.to_string(builder)
+			shader_set_uniform(RENDERER.material_shader, uniform_name, &transforms[i])
+		}
+		shader_set_uniform(RENDERER.material_shader, "hasAnimation", f32(1.0))
+	} else {
+		shader_set_uniform(RENDERER.material_shader, "hasAnimation", f32(0.0))
+	}
+
+
 	model_draw(model, RENDERER.material_shader)
 }
 
 renderer_draw_model_outlined :: proc(
 	model: ^Model,
 	ambient_light: ^Light,
+	animator: ^Animator,
 	transform: ^engine.Transform,
 	view_pos: ^glm.vec3,
 	view_mat, proj_mat: ^glm.mat4,
@@ -87,12 +109,44 @@ renderer_draw_model_outlined :: proc(
 	shader_set_uniform(RENDERER.material_shader, "light.ambient", &ambient_light.ambient)
 	shader_set_uniform(RENDERER.material_shader, "light.diffuse", &ambient_light.diffuse)
 	shader_set_uniform(RENDERER.material_shader, "light.specular", &ambient_light.specular)
+
+	if animator != nil {
+		transforms := animator.final_bone_matrices
+		for i in 0 ..< len(transforms) {
+			builder := strings.builder_make()
+			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_int(&builder, i)
+			strings.write_string(&builder, "]")
+
+			uniform_name := strings.to_string(builder)
+			shader_set_uniform(RENDERER.material_shader, uniform_name, &transforms[i])
+		}
+		shader_set_uniform(RENDERER.material_shader, "hasAnimation", f32(1.0))
+	} else {
+		shader_set_uniform(RENDERER.material_shader, "hasAnimation", f32(0.0))
+	}
 	model_draw(model, RENDERER.material_shader)
 
 	disable_stencil_testing()
 	shader_use(RENDERER.outline_shader)
 	shader_set_uniform(RENDERER.outline_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.outline_shader, "view", view_mat)
+
+	if animator != nil {
+		transforms := animator.final_bone_matrices
+		for i in 0 ..< len(transforms) {
+			builder := strings.builder_make()
+			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_int(&builder, i)
+			strings.write_string(&builder, "]")
+
+			uniform_name := strings.to_string(builder)
+			shader_set_uniform(RENDERER.outline_shader, uniform_name, &transforms[i])
+		}
+		shader_set_uniform(RENDERER.outline_shader, "hasAnimation", f32(1.0))
+	} else {
+		shader_set_uniform(RENDERER.outline_shader, "hasAnimation", f32(0.0))
+	}
 
 	newtransform :=
 		glm.mat4Translate(transform.position) *
