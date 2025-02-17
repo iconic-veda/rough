@@ -25,11 +25,12 @@ AssimpNodeData :: struct {
 }
 
 Animation :: struct {
-	duration:        f64,
-	tick_per_second: f64,
-	root_node:       AssimpNodeData,
-	bones:           [dynamic]^Bone,
-	bone_info_map:   map[string]BoneInfo,
+	duration:                 f64,
+	tick_per_second:          f64,
+	root_node:                AssimpNodeData,
+	bones:                    [dynamic]^Bone,
+	bone_info_map:            map[string]BoneInfo,
+	global_inverse_transform: glm.mat4,
 }
 
 
@@ -163,7 +164,6 @@ extract_mesh :: proc(model: ^Model, scene: ^assimp.Scene, mesh: ^assimp.Mesh) {
 	   assimp.Return.SUCCESS {
 		log.error("Failed to get material name")
 	}
-
 
 	name := string(mat_name.data[:mat_name.length])
 	append(&model.meshes, mesh_new(vertices, indices, MaterialHandle(strings.clone(name))))
@@ -519,6 +519,10 @@ model_new_with_anim :: proc(file_path: string) -> (^Model, ^Animation) {
 	}
 	animation.bones = make([dynamic]^Bone)
 
+	animation.global_inverse_transform = glm.inverse_mat4(
+		assimp.matrix_convert(scene.mRootNode.mTransformation),
+	)
+
 
 	read_hierarchy_data(scene.mRootNode, &animation.root_node)
 	read_missing_bones(animation, scene.mAnimations[0], model)
@@ -574,6 +578,7 @@ anim_find_bone :: proc(self: ^Animation, name: string) -> ^Bone {
 	}
 	return nil
 }
+
 animation_free :: proc(animation: ^Animation) {
 	for &bone in animation.bones {
 		bone_free(bone)

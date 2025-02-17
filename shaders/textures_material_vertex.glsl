@@ -21,15 +21,17 @@ uniform mat4 projection;
 
 const int MAX_BONES = 1000;
 const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+uniform mat4 gBonesTransformation[MAX_BONES];
 
 uniform float hasAnimation;
 
 void main()
 {
     vec4 worldPos;
-    vec4 totalPosition = vec4(0.0f);
+    mat3 normalMatrix = mat3(1.0);
     if (hasAnimation == 1.0) {
+        mat4 BoneTransform;
+        vec4 totalPosition = vec4(0.0f);
         for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
         {
             if (aBoneIds[i] == -1)
@@ -39,12 +41,13 @@ void main()
                 totalPosition = vec4(aPos, 1.0f);
                 break;
             }
-            vec4 localPosition = finalBonesMatrices[aBoneIds[i]] * vec4(aPos, 1.0f);
-            totalPosition += localPosition * aWeights[i];
-            // vec3 localNormal = mat3(finalBonesMatrices[aBoneIds[i]]) * aNormal;
+            BoneTransform += gBonesTransformation[aBoneIds[i]] * aWeights[i];
+            totalPosition += gBonesTransformation[aBoneIds[i]] * aWeights[i] * vec4(aPos, 1.0f);
         }
+        normalMatrix = transpose(inverse(mat3(BoneTransform)));
         worldPos = model * totalPosition;
     } else {
+        normalMatrix = mat3(model);
         worldPos = model * vec4(aPos, 1.0);
     }
 
@@ -52,10 +55,10 @@ void main()
     vs_out.FragColor = aColor;
     vs_out.TexCoords = aTexCoords;
 
-    vec3 T = normalize(mat3(model) * aTangent);
-    vec3 B = normalize(mat3(model) * aBitangent);
-    vec3 N = normalize(mat3(model) * aNormal);
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 N = normalize(normalMatrix * aNormal);
     vs_out.TBN = mat3(T, B, N);
 
-    gl_Position = projection * ((view * model) * totalPosition);
+    gl_Position = projection * view * worldPos;
 }

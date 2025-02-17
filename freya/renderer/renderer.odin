@@ -74,7 +74,7 @@ renderer_draw_model :: proc(
 		transforms := animator.final_bone_matrices
 		for i in 0 ..< len(transforms) {
 			builder := strings.builder_make()
-			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_string(&builder, "gBonesTransformation[")
 			strings.write_int(&builder, i)
 			strings.write_string(&builder, "]")
 
@@ -114,7 +114,7 @@ renderer_draw_model_outlined :: proc(
 		transforms := animator.final_bone_matrices
 		for i in 0 ..< len(transforms) {
 			builder := strings.builder_make()
-			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_string(&builder, "gBonesTransformation[")
 			strings.write_int(&builder, i)
 			strings.write_string(&builder, "]")
 
@@ -136,7 +136,7 @@ renderer_draw_model_outlined :: proc(
 		transforms := animator.final_bone_matrices
 		for i in 0 ..< len(transforms) {
 			builder := strings.builder_make()
-			strings.write_string(&builder, "finalBonesMatrices[")
+			strings.write_string(&builder, "gBonesTransformation[")
 			strings.write_int(&builder, i)
 			strings.write_string(&builder, "]")
 

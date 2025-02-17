@@ -112,6 +112,19 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 				}
 			}
 		}
+
+		{ 	// Bone structure
+			im.SeparatorText("Bone structure")
+			animator, err := ecs.get_component(
+				panel.entities_world,
+				panel.selected_entity,
+				^renderer.Animator,
+			)
+			if err == ecs.ECS_Error.NO_ERROR {
+				root_node := (animator^).current_animation.root_node
+				draw_assimp_node(&root_node)
+			}
+		}
 	}
 	im.End()
 
@@ -259,5 +272,19 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 		}
 		file_selector_reset(panel.model_file_selector)
 		show_add_entity_panel = false
+	}
+}
+
+@(private)
+draw_assimp_node :: proc(node: ^renderer.AssimpNodeData) {
+	if im.TreeNode(strings.unsafe_string_to_cstring(node.name)) {
+		im.Text("Children Count: %d", node.children_count)
+
+
+		for &child in node.children {
+			draw_assimp_node(&child)
+		}
+
+		im.TreePop()
 	}
 }

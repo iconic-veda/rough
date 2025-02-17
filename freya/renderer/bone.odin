@@ -17,8 +17,8 @@ KeyPosition :: struct {
 }
 
 KeyRotation :: struct {
-	time:     f64,
-	rotation: glm.quat,
+	time:        f64,
+	orientation: glm.quat,
 }
 
 KeyScale :: struct {
@@ -63,7 +63,10 @@ bone_new :: proc(name: string, id: i32, chan: ^assimp.NodeAnim) -> ^Bone {
 	for i in 0 ..< bone.num_rotations {
 		rot := chan.mRotationKeys[i].mValue
 		time := chan.mRotationKeys[i].mTime
-		append(&bone.keys_rot, KeyRotation{time = time, rotation = transmute(glm.quat)rot})
+		append(
+			&bone.keys_rot,
+			KeyRotation{time = time, orientation = assimp.quaterion_convert(rot)},
+		)
 	}
 
 	bone.num_scalings = chan.mNumScalingKeys
@@ -76,26 +79,26 @@ bone_new :: proc(name: string, id: i32, chan: ^assimp.NodeAnim) -> ^Bone {
 	return bone
 }
 
-bone_free :: proc(bone: ^Bone) {
-	delete_string(bone.name)
-	delete(bone.keys_pos)
-	delete(bone.keys_rot)
-	delete(bone.keys_scl)
+bone_free :: proc(self: ^Bone) {
+	delete_string(self.name)
+	delete(self.keys_pos)
+	delete(self.keys_rot)
+	delete(self.keys_scl)
 
-	free(bone)
+	free(self)
 }
 
-bone_update :: proc(bone: ^Bone, animTime: f64) {
-	translation := interpolate_positions(bone, animTime)
-	rotation := interpolate_rotation(bone, animTime)
-	scaling := interpolate_scaling(bone, animTime)
+bone_update :: proc(self: ^Bone, animTime: f64) {
+	translation := interpolate_positions(self, animTime)
+	rotation := interpolate_rotation(self, animTime)
+	scaling := interpolate_scaling(self, animTime)
 
-	bone.offset = translation * rotation * scaling
+	self.offset = translation * rotation * scaling
 }
 
-get_position_index :: proc(bone: ^Bone, anim_time: f64) -> u32 {
-	for i in 0 ..< (bone.num_positions - 1) {
-		if anim_time < bone.keys_pos[i + 1].time {
+get_position_index :: proc(self: ^Bone, anim_time: f64) -> u32 {
+	for i in 0 ..< (self.num_positions - 1) {
+		if anim_time < self.keys_pos[i + 1].time {
 			return i
 		}
 	}
@@ -103,9 +106,9 @@ get_position_index :: proc(bone: ^Bone, anim_time: f64) -> u32 {
 	return 0
 }
 
-get_rotation_index :: proc(bone: ^Bone, anim_time: f64) -> u32 {
-	for i in 0 ..< (bone.num_rotations - 1) {
-		if anim_time < bone.keys_rot[i + 1].time {
+get_rotation_index :: proc(self: ^Bone, anim_time: f64) -> u32 {
+	for i in 0 ..< (self.num_rotations - 1) {
+		if anim_time < self.keys_rot[i + 1].time {
 			return i
 		}
 	}
@@ -113,9 +116,9 @@ get_rotation_index :: proc(bone: ^Bone, anim_time: f64) -> u32 {
 	return 0
 }
 
-get_scaling_index :: proc(bone: ^Bone, anim_time: f64) -> u32 {
-	for i in 0 ..< (bone.num_scalings - 1) {
-		if anim_time < bone.keys_scl[i + 1].time {
+get_scaling_index :: proc(self: ^Bone, anim_time: f64) -> u32 {
+	for i in 0 ..< (self.num_scalings - 1) {
+		if anim_time < self.keys_scl[i + 1].time {
 			return i
 		}
 	}
@@ -133,67 +136,77 @@ get_scale_factor :: proc(last_time_stamp: f64, next_time_stamp: f64, anim_time: 
 }
 
 @(private)
-interpolate_positions :: proc(bone: ^Bone, anim_time: f64) -> glm.mat4 {
-	if bone.num_positions == 1 {
-		return glm.mat4Translate(bone.keys_pos[0].position)
+interpolate_positions :: proc(self: ^Bone, anim_time: f64) -> glm.mat4 {
+	if self.num_positions == 1 {
+		return glm.mat4Translate(self.keys_pos[0].position)
 	}
 
-
-	p0_idx := get_position_index(bone, anim_time)
+	p0_idx := get_position_index(self, anim_time)
 	p1_idx := p0_idx + 1
-	assert(p1_idx < bone.num_positions)
+	assert(p1_idx < self.num_positions)
 
-	scale_factor: f32 = f32(
-		get_scale_factor(bone.keys_pos[p0_idx].time, bone.keys_pos[p1_idx].time, anim_time),
+	scale_factor := get_scale_factor(
+		self.keys_pos[p0_idx].time,
+		self.keys_pos[p1_idx].time,
+		anim_time,
 	)
 
 	final_pos := glm.mix(
-		bone.keys_pos[p0_idx].position,
-		bone.keys_pos[p1_idx].position,
-		scale_factor,
+		self.keys_pos[p0_idx].position,
+		self.keys_pos[p1_idx].position,
+		f32(scale_factor),
 	)
 	return glm.mat4Translate(final_pos)
 }
 
 @(private)
-interpolate_rotation :: proc(bone: ^Bone, anim_time: f64) -> glm.mat4 {
-	if bone.num_rotations == 1 {
-		rot := glm.normalize(bone.keys_rot[0].rotation)
+interpolate_rotation :: proc(self: ^Bone, anim_time: f64) -> glm.mat4 {
+	if self.num_rotations == 1 {
+		rot := glm.normalize(self.keys_rot[0].orientation)
 		return glm.mat4FromQuat(rot)
 	}
 
-	r0_idx := get_rotation_index(bone, anim_time)
+	r0_idx := get_rotation_index(self, anim_time)
 	r1_idx := r0_idx + 1
-	assert(r1_idx < bone.num_rotations)
+	assert(r1_idx < self.num_rotations)
 
-	scale_factor: f32 = f32(
-		get_scale_factor(bone.keys_rot[r0_idx].time, bone.keys_rot[r1_idx].time, anim_time),
+	scale_factor := get_scale_factor(
+		self.keys_rot[r0_idx].time,
+		self.keys_rot[r1_idx].time,
+		anim_time,
 	)
 
 	final_rot := glm.slerp(
-		bone.keys_rot[r0_idx].rotation,
-		bone.keys_rot[r1_idx].rotation,
-		scale_factor,
+		self.keys_rot[r0_idx].orientation,
+		self.keys_rot[r1_idx].orientation,
+		f32(scale_factor),
 	)
 
 	return glm.mat4FromQuat(glm.normalize(final_rot))
 }
 
 @(private)
-interpolate_scaling :: proc(bone: ^Bone, anim_time: f64) -> glm.mat4 {
-	if bone.num_scalings == 1 {
-		return glm.mat4Scale(bone.keys_scl[0].scale)
+interpolate_scaling :: proc(self: ^Bone, anim_time: f64) -> glm.mat4 {
+	if self.num_scalings == 1 {
+		return glm.mat4Scale(self.keys_scl[0].scale)
 	}
 
-	s0_idx := get_scaling_index(bone, anim_time)
+	s0_idx := get_scaling_index(self, anim_time)
 	s1_idx := s0_idx + 1
-	assert(s1_idx < bone.num_scalings)
+	assert(s1_idx < self.num_scalings)
 
-	scale_factor: f32 = f32(
-		get_scale_factor(bone.keys_scl[s0_idx].time, bone.keys_scl[s1_idx].time, anim_time),
+	scale_factor := get_scale_factor(
+		self.keys_scl[s0_idx].time,
+		self.keys_scl[s1_idx].time,
+		anim_time,
 	)
 
-	final_scl := glm.mix(bone.keys_scl[s0_idx].scale, bone.keys_scl[s1_idx].scale, scale_factor)
+
+	final_scl := glm.mix(
+		self.keys_scl[s0_idx].scale,
+		self.keys_scl[s1_idx].scale,
+		f32(scale_factor),
+	)
 
 	return glm.mat4Scale(final_scl)
 }

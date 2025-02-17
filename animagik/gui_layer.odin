@@ -62,7 +62,7 @@ initialize :: proc() {
 		{
 			ent := ecs.create_entity(&entities_world)
 			model_component, animation := renderer.model_new_with_anim(
-				"assets/models/tarisland_-_dragon_high_poly/scene.gltf", // "assets/models/vampire/dancing_vampire.dae",//
+				"assets/models/rabbit/scene.gltf", // "assets/models/vampire/dancing_vampire.dae",
 			)
 
 			animator_component := renderer.animator_new(animation)
@@ -72,7 +72,7 @@ initialize :: proc() {
 			t := engine.Transform {
 				glm.vec3{0.0, 0.0, 0.0},
 				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{0.004, 0.004, 0.004},
+				glm.vec3{1, 1, 1},
 				glm.mat4Translate({0.0, 0.0, 0.0}),
 			}
 			t.model_matrix =

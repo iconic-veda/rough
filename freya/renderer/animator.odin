@@ -59,13 +59,14 @@ calculate_bone_transform :: proc(
 	node: ^AssimpNodeData,
 	parent_transform: glm.mat4,
 ) {
+	node_transformation := node.transformation
 	bone := anim_find_bone(self.current_animation, node.name)
 	if bone != nil {
 		bone_update(bone, self.current_time)
-		node.transformation = bone.offset
+		node_transformation = bone.offset
 	}
 
-	global_transform := parent_transform * node.transformation
+	global_transform := parent_transform * node_transformation
 	if _, ok := self.current_animation.bone_info_map[node.name]; ok {
 		index := self.current_animation.bone_info_map[node.name].id
 		offset := self.current_animation.bone_info_map[node.name].offset
