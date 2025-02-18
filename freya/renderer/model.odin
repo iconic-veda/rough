@@ -33,8 +33,26 @@ Animation :: struct {
 	global_inverse_transform: glm.mat4,
 }
 
+model_new :: proc {
+	model_new_from_filepath,
+	model_new_explicit,
+}
 
-model_new :: proc(file_path: string) -> ^Model {
+model_new_explicit :: proc(
+	meshes: [dynamic]^Mesh,
+	materials: [dynamic]MaterialHandle,
+	bone_info_map: map[string]BoneInfo,
+	bone_count: u32,
+) -> ^Model {
+	model := new(Model)
+	model.meshes = meshes
+	model.materials = materials
+	model.bone_info_map = bone_info_map
+	model.bone_count = bone_count
+	return model
+}
+
+model_new_from_filepath :: proc(file_path: string) -> ^Model {
 	log.infof("Loading model: {}", file_path)
 
 	import_flags := get_import_flags_by_extension(file_path)
@@ -466,7 +484,6 @@ get_import_flags_by_extension :: proc(file_path: string) -> assimp.PostProcessSt
 
 	return flags
 }
-
 
 // Animation ===================================================================
 

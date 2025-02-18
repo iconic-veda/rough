@@ -70,9 +70,6 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 	im.Begin("Selected entity")
 	name, err := ecs.get_component(panel.entities_world, panel.selected_entity, engine.Name)
 	if err != ecs.ECS_Error.ENTITY_DOES_NOT_HAVE_THIS_COMPONENT {
-		// new_name: string = "dsadsa;kd;lsak;l"
-		// im.InputText("Name", strings.unsafe_string_to_cstring(new_name), len(new_name))
-
 		// TODO: Change font size/style(bold)
 		im.Text("Entity name: %s", strings.unsafe_string_to_cstring(name^))
 
@@ -85,9 +82,10 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 			)
 			if err == ecs.ECS_Error.NO_ERROR {
 				{ 	// Transform
-					im.Text("Position:")
+					im.Text("Pos:")
+					im.SameLine()
 					changed := false
-					changed |= im.DragFloat3(
+					changed |= drag_float3(
 						"Pos",
 						&transform.position,
 						0.1,
@@ -95,11 +93,13 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 						math.F32_MAX,
 					)
 
-					im.Text("Rotation:")
-					changed |= im.DragFloat3("Rot", &transform.rotation, 0.1, -math.PI, math.PI)
+					im.Text("Rot:")
+					im.SameLine()
+					changed |= drag_float3("Rot", &transform.rotation, 0.1, -math.PI, math.PI)
 
-					im.Text("Scale:")
-					changed |= im.DragFloat3("Scale", &transform.scale, 0.01, 0, 10)
+					im.Text("Scl:")
+					im.SameLine()
+					changed |= drag_float3("Scale", &transform.scale, 0.01, 0, 10)
 
 					if changed {
 						transform.model_matrix =
@@ -113,7 +113,7 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 			}
 		}
 
-		{ 	// Bone structure
+		{ 	// BONE STRUCTURE
 			im.SeparatorText("Animation data")
 			animator, err := ecs.get_component(
 				panel.entities_world,
@@ -132,113 +132,142 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 	im.End()
 
 
-	im.Begin("Material")
-	{
-		model, err := ecs.get_component(
-			panel.entities_world,
-			panel.selected_entity,
-			^renderer.Model,
-		)
-		if err == ecs.ECS_Error.NO_ERROR {
-			for handle in model^.materials {
-				material, err := renderer.resource_manager_get_material(handle)
+	when ODIN_DEBUG {
+		{
+			im.Begin("Material")
 
-				im.Text("Material Name : %s", strings.unsafe_string_to_cstring(material.name))
-				im.Separator()
+			model, err := ecs.get_component(
+				panel.entities_world,
+				panel.selected_entity,
+				^renderer.Model,
+			)
+			if err == ecs.ECS_Error.NO_ERROR {
+				for handle in model^.materials {
+					material, err := renderer.resource_manager_get_material(handle)
 
-				diffuse, differr := renderer.resource_manager_get_texture(material.diffuse_texture)
-				if differr == renderer.ResourceManagerError.NoError {
-					im.Text("Diffuse texture")
-					im.Image(
-						im.TextureID(uintptr(diffuse.id)),
-						{100, 100},
-						{0, 1},
-						{1, 0},
-						{1, 1, 1, 1},
-						{0, 0, 0, 0},
+					im.Text("Material Name : %s", strings.unsafe_string_to_cstring(material.name))
+					im.Separator()
+
+					diffuse, differr := renderer.resource_manager_get_texture(
+						material.diffuse_texture,
 					)
-				}
+					if differr == renderer.ResourceManagerError.NoError {
+						im.Text("Diffuse texture")
+						im.Image(
+							im.TextureID(uintptr(diffuse.id)),
+							{100, 100},
+							{0, 1},
+							{1, 0},
+							{1, 1, 1, 1},
+							{0, 0, 0, 0},
+						)
+					}
 
-				specular, specerr := renderer.resource_manager_get_texture(
-					material.specular_texture,
-				)
-				if specerr == renderer.ResourceManagerError.NoError {
-					im.Text("Specular texture")
-					im.Image(
-						im.TextureID(uintptr(specular.id)),
-						{100, 100},
-						{0, 1},
-						{1, 0},
-						{1, 1, 1, 1},
-						{0, 0, 0, 0},
+					specular, specerr := renderer.resource_manager_get_texture(
+						material.specular_texture,
 					)
-				}
+					if specerr == renderer.ResourceManagerError.NoError {
+						im.Text("Specular texture")
+						im.Image(
+							im.TextureID(uintptr(specular.id)),
+							{100, 100},
+							{0, 1},
+							{1, 0},
+							{1, 1, 1, 1},
+							{0, 0, 0, 0},
+						)
+					}
 
-				normal, normalerr := renderer.resource_manager_get_texture(material.normal_texture)
-				if normalerr == renderer.ResourceManagerError.NoError {
-					im.Text("Normal texture")
-					im.Image(
-						im.TextureID(uintptr(normal.id)),
-						{100, 100},
-						{0, 1},
-						{1, 0},
-						{1, 1, 1, 1},
-						{0, 0, 0, 0},
+					normal, normalerr := renderer.resource_manager_get_texture(
+						material.normal_texture,
 					)
-				}
+					if normalerr == renderer.ResourceManagerError.NoError {
+						im.Text("Normal texture")
+						im.Image(
+							im.TextureID(uintptr(normal.id)),
+							{100, 100},
+							{0, 1},
+							{1, 0},
+							{1, 1, 1, 1},
+							{0, 0, 0, 0},
+						)
+					}
 
-				height, heighterr := renderer.resource_manager_get_texture(material.height_texture)
-				if heighterr == renderer.ResourceManagerError.NoError {
-					im.Text("Height texture")
-					im.Image(
-						im.TextureID(uintptr(height.id)),
-						{100, 100},
-						{0, 1},
-						{1, 0},
-						{1, 1, 1, 1},
-						{0, 0, 0, 0},
+					height, heighterr := renderer.resource_manager_get_texture(
+						material.height_texture,
 					)
-				}
+					if heighterr == renderer.ResourceManagerError.NoError {
+						im.Text("Height texture")
+						im.Image(
+							im.TextureID(uintptr(height.id)),
+							{100, 100},
+							{0, 1},
+							{1, 0},
+							{1, 1, 1, 1},
+							{0, 0, 0, 0},
+						)
+					}
 
-				ambient, ambienterr := renderer.resource_manager_get_texture(
-					material.ambient_texture,
-				)
-				if ambienterr == renderer.ResourceManagerError.NoError {
-					im.Text("Ambient texture")
-					im.Image(
-						im.TextureID(uintptr(ambient.id)),
-						{100, 100},
-						{0, 1},
-						{1, 0},
-						{1, 1, 1, 1},
-						{0, 0, 0, 0},
+					ambient, ambienterr := renderer.resource_manager_get_texture(
+						material.ambient_texture,
 					)
+					if ambienterr == renderer.ResourceManagerError.NoError {
+						im.Text("Ambient texture")
+						im.Image(
+							im.TextureID(uintptr(ambient.id)),
+							{100, 100},
+							{0, 1},
+							{1, 0},
+							{1, 1, 1, 1},
+							{0, 0, 0, 0},
+						)
+					}
+
+					im.Text("Material - shininess : %f", material.shininess)
+
+					im.Separator()
 				}
-
-				im.Text("Material - shininess : %f", material.shininess)
-
-				im.Separator()
 			}
+			im.End()
 		}
 	}
-	im.End()
 }
 
 @(private)
 add_model_panel :: proc(panel: ^ScenePanel) {
 	name_buffer: []byte = make([]byte, 20)
 	im.InputText("Entity Name", cstring(&name_buffer[0]), 20)
-
 	object_path := file_selector_panel(panel.model_file_selector)
 
+	@(static) add_with_animation: bool = false
+	im.Checkbox("Add with animation", &add_with_animation)
+
+
 	if object_path != "" {
-		model_component := renderer.model_new(object_path)
-		if model_component == nil {
-			file_selector_reset(panel.model_file_selector)
-			return
+		model_component: ^renderer.Model = nil
+		animation_component: ^renderer.Animation = nil
+		if add_with_animation {
+			model_component, animation_component = renderer.model_new_with_anim(object_path)
+			if model_component == nil {
+				file_selector_reset(panel.model_file_selector)
+				return
+			}
+		} else {
+			model_component = renderer.model_new(object_path)
+			if model_component == nil {
+				file_selector_reset(panel.model_file_selector)
+				return
+			}
 		}
+
 		ent := ecs.create_entity(panel.entities_world)
 		ecs.add_component(panel.entities_world, ent, model_component)
+
+		if animation_component != nil {
+			animator := renderer.animator_new(animation_component)
+			ecs.add_component(panel.entities_world, ent, animator)
+		}
+
 		ecs.add_component(
 			panel.entities_world,
 			ent,
@@ -289,4 +318,70 @@ draw_assimp_node :: proc(node: ^renderer.AssimpNodeData) {
 
 		im.TreePop()
 	}
+}
+
+
+@(private)
+drag_float3 :: proc(label: string, value: ^glm.vec3, speed, min, max: f32) -> bool {
+	changed := false
+	im.AlignTextToFramePadding()
+	{
+		im.PushStyleColor(im.Col.Text, 0xFF000000)
+		im.PushStyleColor(im.Col.Button, 0xFF6BB3FC) // Blue
+		im.Button("X")
+		im.PopStyleColor(2)
+	}
+	im.SameLine()
+	im.PushItemWidth(80)
+	tmplabel := strings.concatenate({"##x", label}, allocator = context.temp_allocator)
+	changed |= im.DragFloat(
+		strings.unsafe_string_to_cstring(tmplabel),
+		&value[0],
+		speed,
+		min,
+		max,
+		nil,
+	)
+	im.PopItemWidth()
+
+	im.SameLine()
+	{
+		im.PushStyleColor(im.Col.Text, 0xFF000000)
+		im.PushStyleColor(im.Col.Button, 0xFF6BFCC0) // Green
+		im.Button("Y")
+		im.PopStyleColor(2)
+	}
+	im.SameLine()
+	im.PushItemWidth(80)
+	tmplabel = strings.concatenate({"##y", label}, allocator = context.temp_allocator)
+	changed |= im.DragFloat(
+		strings.unsafe_string_to_cstring(tmplabel),
+		&value[1],
+		speed,
+		min,
+		max,
+		nil,
+	)
+	im.PopItemWidth()
+
+	im.SameLine()
+	{
+		im.PushStyleColor(im.Col.Text, 0xFF000000)
+		im.PushStyleColor(im.Col.Button, 0xFFFC6B6B) // Red
+		im.Button("Z")
+		im.PopStyleColor(2)
+	}
+	im.SameLine()
+	im.PushItemWidth(80)
+	tmplabel = strings.concatenate({"##z", label}, allocator = context.temp_allocator)
+	changed |= im.DragFloat(
+		strings.unsafe_string_to_cstring(tmplabel),
+		&value[2],
+		speed,
+		min,
+		max,
+		nil,
+	)
+	im.PopItemWidth()
+	return changed
 }

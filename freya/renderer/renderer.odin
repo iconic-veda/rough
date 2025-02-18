@@ -10,9 +10,10 @@ import engine "../engine"
 RENDERER: ^Renderer = nil
 
 Renderer :: struct {
-	outline_shader:  ShaderProgram,
-	material_shader: ShaderProgram,
-	grid_shader:     ShaderProgram,
+	outline_shader:       ShaderProgram,
+	material_shader:      ShaderProgram,
+	ambient_light_shader: ShaderProgram,
+	grid_shader:          ShaderProgram,
 }
 
 renderer_initialize :: proc() {
@@ -26,6 +27,11 @@ renderer_initialize :: proc() {
 	RENDERER.outline_shader = shader_new(
 		#load("../../shaders/textures_material_vertex.glsl"),
 		#load("../../shaders/single_color_fragment.glsl"),
+	)
+
+	RENDERER.ambient_light_shader = shader_new(
+		#load("../../shaders/ambient_light_shader_vertex.glsl"),
+		#load("../../shaders/ambient_light_shader_fragment.glsl"),
 	)
 
 	RENDERER.grid_shader = shader_new(
@@ -53,7 +59,7 @@ renderer_draw_grid :: proc(view_mat, proj_mat: ^glm.mat4) {
 
 renderer_draw_model :: proc(
 	model: ^Model,
-	ambient_light: ^Light,
+	ambient_light: ^AmbientLight,
 	animator: ^Animator,
 	transform: ^engine.Transform,
 	view_pos: ^glm.vec3,
@@ -88,11 +94,18 @@ renderer_draw_model :: proc(
 
 
 	model_draw(model, RENDERER.material_shader)
+
+	if ambient_light != nil {
+		shader_use(RENDERER.ambient_light_shader)
+		shader_set_uniform(RENDERER.ambient_light_shader, "projection", proj_mat)
+		shader_set_uniform(RENDERER.ambient_light_shader, "view", view_mat)
+		ambientlight_draw(ambient_light, RENDERER.ambient_light_shader)
+	}
 }
 
 renderer_draw_model_outlined :: proc(
 	model: ^Model,
-	ambient_light: ^Light,
+	ambient_light: ^AmbientLight,
 	animator: ^Animator,
 	transform: ^engine.Transform,
 	view_pos: ^glm.vec3,
@@ -158,4 +171,11 @@ renderer_draw_model_outlined :: proc(
 	shader_set_uniform(RENDERER.outline_shader, "model", &newtransform)
 	model_draw(model, RENDERER.outline_shader)
 	reset_stencil_testing()
+
+	if ambient_light != nil {
+		shader_use(RENDERER.ambient_light_shader)
+		shader_set_uniform(RENDERER.ambient_light_shader, "projection", proj_mat)
+		shader_set_uniform(RENDERER.ambient_light_shader, "view", view_mat)
+		ambientlight_draw(ambient_light, RENDERER.ambient_light_shader)
+	}
 }

@@ -13,7 +13,7 @@ import glm "core:math/linalg/glsl"
 import ecs "../freya/vendor/odin-ecs"
 import im "../freya/vendor/odin-imgui"
 
-camera_controller: engine.EditorCameraController
+camera_controller: engine.FPSCameraController
 viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
@@ -22,6 +22,8 @@ entities_world: ecs.Context
 
 is_cursor_captured: bool = true
 is_wire_mode: bool = false
+
+ambient_light: ^renderer.AmbientLight
 
 GuiLayer :: struct {
 	using base: engine.Layer,
@@ -49,7 +51,7 @@ initialize :: proc() {
 		},
 	)
 
-	camera_controller = engine.new_editor_camera_controller(800.0 / 600.0)
+	camera_controller = engine.new_fps_camera_controller(800.0 / 600.0)
 
 	viewport_fb = renderer.framebuffer_new(
 		800,
@@ -63,7 +65,7 @@ initialize :: proc() {
 			ent := ecs.create_entity(&entities_world)
 			model_component, animation := renderer.model_new_with_anim(
 				"assets/models/lowpoly_dragon/scene.gltf",
-			) // "assets/models/vampire/dancing_vampire.dae", // "assets/models/rabbit/scene.gltf"
+			)
 
 
 			animator_component := renderer.animator_new(animation)
@@ -73,7 +75,7 @@ initialize :: proc() {
 			t := engine.Transform {
 				glm.vec3{0.0, 0.0, 0.0},
 				glm.vec3{0.0, 0.0, 0.0},
-				glm.vec3{0.05, 0.05, 0.05},
+				glm.vec3{0.7, 0.7, 0.7},
 				glm.mat4Translate({0.0, 0.0, 0.0}),
 			}
 			t.model_matrix =
@@ -105,6 +107,15 @@ initialize :: proc() {
 			ecs.add_component(&entities_world, ent, t)
 			ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
 		}
+
+		{ 	// Ambient light
+			ambient_light = renderer.ambientlight_new(
+				glm.vec3{10.0, 10.0, 20.0},
+				glm.vec3{0.2, 0.2, 0.2},
+				glm.vec3{0.5, 0.5, 0.5},
+				glm.vec3{1.0, 1.0, 1.0},
+			)
+		}
 	}
 
 
@@ -127,6 +138,8 @@ shutdown :: proc() {
 			renderer.model_free(model^)
 		}
 		ecs.deinit_ecs(&entities_world)
+
+		renderer.ambientlight_free(ambient_light)
 	}
 
 	{ 	// Gui panels
@@ -162,17 +175,10 @@ render :: proc() {
 				animator = animator_comp^
 			}
 
-			light := renderer.Light {
-				glm.vec3{0.0, 10.0, 0.0},
-				glm.vec3{0.2, 0.2, 0.2},
-				glm.vec3{1.0, 1.0, 1.0},
-				glm.vec3{0.2, 0.2, 0.2},
-			}
-
 			if scene_panel.selected_entity == ent {
 				renderer.renderer_draw_model_outlined(
 					model^,
-					&light,
+					ambient_light,
 					animator,
 					transform,
 					&camera_controller._position,
@@ -182,7 +188,7 @@ render :: proc() {
 			} else {
 				renderer.renderer_draw_model(
 					model^,
-					&light,
+					ambient_light,
 					animator,
 					transform,
 					&camera_controller._position,

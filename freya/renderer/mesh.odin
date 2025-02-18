@@ -64,73 +64,74 @@ mesh_new_explicit :: proc(
 
 @(export)
 mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
-	material, err := resource_manager_get(m.material)
-	if err == ResourceManagerError.NoError {
-		{ 	// Diffuse
-			diffuse, err := resource_manager_get_texture(material.diffuse_texture)
-			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.diffuse", 0)
-				shader_set_uniform(shader, "useDiffuse", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0)
-				gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
-			} else {
-				shader_set_uniform(shader, "useDiffuse", f32(0.0))
+	if m.material != "" {
+		material, err := resource_manager_get(m.material)
+		if err == ResourceManagerError.NoError {
+			{ 	// Diffuse
+				diffuse, err := resource_manager_get_texture(material.diffuse_texture)
+				if err == ResourceManagerError.NoError {
+					shader_set_uniform(shader, "material.diffuse", 0)
+					shader_set_uniform(shader, "useDiffuse", f32(1.0))
+					gl.ActiveTexture(gl.TEXTURE0)
+					gl.BindTexture(gl.TEXTURE_2D, diffuse.id)
+				} else {
+					shader_set_uniform(shader, "useDiffuse", f32(0.0))
+				}
 			}
-		}
 
-		{ 	// Specular
-			specular, err := resource_manager_get_texture(material.specular_texture)
-			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.specular", 1)
-				shader_set_uniform(shader, "useSpecular", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0 + 1)
-				gl.BindTexture(gl.TEXTURE_2D, specular.id)
-			} else {
-				shader_set_uniform(shader, "useSpecular", f32(0.0))
+			{ 	// Specular
+				specular, err := resource_manager_get_texture(material.specular_texture)
+				if err == ResourceManagerError.NoError {
+					shader_set_uniform(shader, "material.specular", 1)
+					shader_set_uniform(shader, "useSpecular", f32(1.0))
+					gl.ActiveTexture(gl.TEXTURE0 + 1)
+					gl.BindTexture(gl.TEXTURE_2D, specular.id)
+				} else {
+					shader_set_uniform(shader, "useSpecular", f32(0.0))
+				}
 			}
-		}
 
-		{ 	// Height
-			height, err := resource_manager_get_texture(material.height_texture)
-			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.height", 2)
-				shader_set_uniform(shader, "useHeight", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0 + 2)
-				gl.BindTexture(gl.TEXTURE_2D, height.id)
-			} else {
-				shader_set_uniform(shader, "useHeight", f32(0.0))
+			{ 	// Height
+				height, err := resource_manager_get_texture(material.height_texture)
+				if err == ResourceManagerError.NoError {
+					shader_set_uniform(shader, "material.height", 2)
+					shader_set_uniform(shader, "useHeight", f32(1.0))
+					gl.ActiveTexture(gl.TEXTURE0 + 2)
+					gl.BindTexture(gl.TEXTURE_2D, height.id)
+				} else {
+					shader_set_uniform(shader, "useHeight", f32(0.0))
+				}
 			}
-		}
 
-		{ 	// Normals
-			height, err := resource_manager_get_texture(material.normal_texture)
-			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.normal", 3)
-				shader_set_uniform(shader, "useNormal", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0 + 3)
-				gl.BindTexture(gl.TEXTURE_2D, height.id)
-			} else {
-				shader_set_uniform(shader, "useNormal", f32(0.0))
+			{ 	// Normals
+				height, err := resource_manager_get_texture(material.normal_texture)
+				if err == ResourceManagerError.NoError {
+					shader_set_uniform(shader, "material.normal", 3)
+					shader_set_uniform(shader, "useNormal", f32(1.0))
+					gl.ActiveTexture(gl.TEXTURE0 + 3)
+					gl.BindTexture(gl.TEXTURE_2D, height.id)
+				} else {
+					shader_set_uniform(shader, "useNormal", f32(0.0))
+				}
 			}
-		}
 
-		{ 	// Ambient
-			ambient, err := resource_manager_get_texture(material.ambient_texture)
-			if err == ResourceManagerError.NoError {
-				shader_set_uniform(shader, "material.ambient", 4)
-				shader_set_uniform(shader, "useAmbient", f32(1.0))
-				gl.ActiveTexture(gl.TEXTURE0 + 4)
-				gl.BindTexture(gl.TEXTURE_2D, ambient.id)
-			} else {
-				shader_set_uniform(shader, "useAmbient", f32(0.0))
+			{ 	// Ambient
+				ambient, err := resource_manager_get_texture(material.ambient_texture)
+				if err == ResourceManagerError.NoError {
+					shader_set_uniform(shader, "material.ambient", 4)
+					shader_set_uniform(shader, "useAmbient", f32(1.0))
+					gl.ActiveTexture(gl.TEXTURE0 + 4)
+					gl.BindTexture(gl.TEXTURE_2D, ambient.id)
+				} else {
+					shader_set_uniform(shader, "useAmbient", f32(0.0))
+				}
 			}
-		}
 
-		{ 	// Shininess
-			shader_set_uniform(shader, "material.shininess", material.shininess)
+			{ 	// Shininess
+				shader_set_uniform(shader, "material.shininess", material.shininess)
+			}
 		}
 	}
-
 
 	gl.BindVertexArray(m._vao)
 	gl.DrawElements(gl.TRIANGLES, i32(len(m.indices)), gl.UNSIGNED_INT, rawptr(uintptr(0)))
