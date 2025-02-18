@@ -114,15 +114,18 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 		}
 
 		{ 	// Bone structure
-			im.SeparatorText("Bone structure")
+			im.SeparatorText("Animation data")
 			animator, err := ecs.get_component(
 				panel.entities_world,
 				panel.selected_entity,
 				^renderer.Animator,
 			)
+
+			im.Checkbox("Play animation", &(animator^).is_playing)
+
 			if err == ecs.ECS_Error.NO_ERROR {
 				root_node := (animator^).current_animation.root_node
-				draw_assimp_node(&root_node)
+				draw_assimp_node(animator^, &root_node)
 			}
 		}
 	}
@@ -276,13 +279,28 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 }
 
 @(private)
-draw_assimp_node :: proc(node: ^renderer.AssimpNodeData) {
+draw_assimp_node :: proc(animator: ^renderer.Animator, node: ^renderer.AssimpNodeData) {
 	if im.TreeNode(strings.unsafe_string_to_cstring(node.name)) {
 		im.Text("Children Count: %d", node.children_count)
 
+		// node_transformation := node.transformation
+		// bone := renderer.anim_find_bone(animator.current_animation, node.name)
+		// if bone != nil {
+		// 	renderer.bone_update(bone, animator.current_time)
+		// 	node_transformation = bone.offset
+		// }
+
+
+		// global_transform := parent_transform * node_transformation
+		// if _, ok := animator.current_animation.bone_info_map[node.name]; ok {
+		// 	index := animator.current_animation.bone_info_map[node.name].id
+		// 	offset := animator.current_animation.bone_info_map[node.name].offset
+		// 	animator.final_bone_matrices[index] = global_transform * offset
+		// }
+
 
 		for &child in node.children {
-			draw_assimp_node(&child)
+			draw_assimp_node(animator, &child)
 		}
 
 		im.TreePop()

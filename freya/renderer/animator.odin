@@ -16,14 +16,19 @@ Animator :: struct {
 	delta_time:          f64,
 	final_bone_matrices: [dynamic]glm.mat4,
 	current_animation:   ^Animation,
+	is_playing:          bool,
 }
 
 animator_new :: proc(animation: ^Animation) -> ^Animator {
 	animator := new(Animator)
+	animator.is_playing = false
+	animator.delta_time = 0.0
 	animator.current_time = 0.0
 	animator.current_animation = animation
 	animator.final_bone_matrices = make([dynamic]glm.mat4, len(animation.bone_info_map))
 	log.infof("Animator created with %d bones", len(animation.bone_info_map))
+
+	calculate_bone_transform(animator, &animation.root_node, glm.mat4(1.0))
 	return animator
 }
 
@@ -35,7 +40,7 @@ animator_free :: proc(self: ^Animator) {
 
 animator_update_animation :: proc(self: ^Animator, delta_time: f64) {
 	self.delta_time = delta_time
-	if self.current_animation != nil {
+	if self.current_animation != nil && self.is_playing {
 		self.current_time += self.current_animation.tick_per_second * delta_time
 		self.current_time = fmod(self.current_time, self.current_animation.duration)
 		calculate_bone_transform(self, &self.current_animation.root_node, glm.mat4(1.0))

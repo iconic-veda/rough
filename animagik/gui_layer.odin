@@ -62,8 +62,9 @@ initialize :: proc() {
 		{
 			ent := ecs.create_entity(&entities_world)
 			model_component, animation := renderer.model_new_with_anim(
-				"assets/models/rabbit/scene.gltf", // "assets/models/vampire/dancing_vampire.dae",
-			)
+				"assets/models/lowpoly_dragon/scene.gltf",
+			) // "assets/models/vampire/dancing_vampire.dae", // "assets/models/rabbit/scene.gltf", //
+
 
 			animator_component := renderer.animator_new(animation)
 			ecs.add_component(&entities_world, ent, model_component)
