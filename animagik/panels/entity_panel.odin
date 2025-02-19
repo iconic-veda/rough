@@ -81,37 +81,20 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 				engine.Transform,
 			)
 			if err == ecs.ECS_Error.NO_ERROR {
-				{ 	// Transform
-					im.Text("Pos:")
-					im.SameLine()
-					changed := false
-					changed |= drag_float3(
-						"Pos",
-						&transform.position,
-						0.1,
-						-math.F32_MAX,
-						math.F32_MAX,
+				changed := transform_dialog(transform)
+				if changed {
+					light, err := ecs.get_component(
+						panel.entities_world,
+						panel.selected_entity,
+						^renderer.AmbientLight,
 					)
-
-					im.Text("Rot:")
-					im.SameLine()
-					changed |= drag_float3("Rot", &transform.rotation, 0.1, -math.PI, math.PI)
-
-					im.Text("Scl:")
-					im.SameLine()
-					changed |= drag_float3("Scale", &transform.scale, 0.01, 0, 10)
-
-					if changed {
-						transform.model_matrix =
-							glm.mat4Translate(transform.position) *
-							glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
-							glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
-							glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
-							glm.mat4Scale(transform.scale)
+					if err == ecs.ECS_Error.NO_ERROR {
+						light^.position = transform.position
 					}
 				}
 			}
 		}
+
 
 		{ 	// BONE STRUCTURE
 			im.SeparatorText("Animation data")
@@ -121,11 +104,10 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 				^renderer.Animator,
 			)
 
-
 			if err == ecs.ECS_Error.NO_ERROR {
 				im.Checkbox("Play animation", &(animator^).is_playing)
 				root_node := (animator^).current_animation.root_node
-				draw_assimp_node(&root_node)
+				node_tree_dialog(&root_node)
 			}
 		}
 	}
@@ -308,12 +290,12 @@ add_model_panel :: proc(panel: ^ScenePanel) {
 }
 
 @(private)
-draw_assimp_node :: proc(node: ^renderer.AssimpNodeData) {
+node_tree_dialog :: proc(node: ^renderer.AssimpNodeData) {
 	if im.TreeNode(strings.unsafe_string_to_cstring(node.name)) {
 		im.Text("Children Count: %d", node.children_count)
 
 		for &child in node.children {
-			draw_assimp_node(&child)
+			node_tree_dialog(&child)
 		}
 
 		im.TreePop()
@@ -383,5 +365,32 @@ drag_float3 :: proc(label: string, value: ^glm.vec3, speed, min, max: f32) -> bo
 		nil,
 	)
 	im.PopItemWidth()
+	return changed
+}
+
+@(private)
+transform_dialog :: proc(transform: ^engine.Transform) -> bool {
+	im.Text("Pos:")
+	im.SameLine()
+	changed := false
+	changed |= drag_float3("Pos", &transform.position, 0.1, -math.F32_MAX, math.F32_MAX)
+
+	im.Text("Rot:")
+	im.SameLine()
+	changed |= drag_float3("Rot", &transform.rotation, 0.1, -math.PI, math.PI)
+
+	im.Text("Scl:")
+	im.SameLine()
+	changed |= drag_float3("Scale", &transform.scale, 0.01, 0, 10)
+
+	if changed {
+		transform.model_matrix =
+			glm.mat4Translate(transform.position) *
+			glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
+			glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
+			glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
+			glm.mat4Scale(transform.scale)
+	}
+
 	return changed
 }

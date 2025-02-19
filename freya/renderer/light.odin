@@ -1,24 +1,24 @@
 package renderer
 
-// import ecs "../../freya/vendor/odin-ecs"
+import "core:strings"
+
+import ecs "../../freya/vendor/odin-ecs"
 import glm "core:math/linalg/glsl"
 
 import engine "../engine"
 
 AmbientLight :: struct {
-	position:   glm.vec3,
-	ambient:    glm.vec3,
-	diffuse:    glm.vec3,
-	specular:   glm.vec3,
-
-	//
-	_model:     ^Model,
-	_transform: engine.Transform,
+	position: glm.vec3,
+	ambient:  glm.vec3,
+	diffuse:  glm.vec3,
+	specular: glm.vec3,
+	_model:   ^Model,
 }
 
-// TODO: Integrate with ECS system so that lights can be added/removed/modified from the editor
-ambientlight_new :: proc(
-	position: glm.vec3, // world: ecs.Context,
+ambientlight_add_from_entity_world :: proc(
+	world: ^ecs.Context,
+	name: engine.Name,
+	position: glm.vec3,
 	ambient: glm.vec3,
 	diffuse: glm.vec3,
 	specular: glm.vec3,
@@ -39,29 +39,38 @@ ambientlight_new :: proc(
 
 	light._model = model
 
-	light._transform = engine.Transform {
+	transform := engine.Transform {
 		position = position,
 		rotation = glm.vec3{0.0, 0.0, 0.0},
 		scale    = glm.vec3{1.0, 1.0, 1.0},
 	}
 
-	light._transform.model_matrix =
-		glm.mat4Translate(light._transform.position) *
-		glm.mat4Rotate({1, 0, 0}, light._transform.rotation.x) *
-		glm.mat4Rotate({0, 1, 0}, light._transform.rotation.y) *
-		glm.mat4Rotate({0, 0, 1}, light._transform.rotation.z) *
-		glm.mat4Scale(light._transform.scale)
+	transform.model_matrix =
+		glm.mat4Translate(transform.position) *
+		glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
+		glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
+		glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
+		glm.mat4Scale(transform.scale)
+
+	ent := ecs.create_entity(world)
+	ecs.add_component(world, ent, light)
+	ecs.add_component(world, ent, transform)
+	ecs.add_component(world, ent, strings.clone(name))
 
 	return light
 }
 
-ambientlight_free :: proc(light: ^AmbientLight) {
+ambientlight_remove_from_entity_world :: proc(name: engine.Name, world: ^ecs.Context) {
+	light: ^AmbientLight
+	for ent in ecs.get_entities_with_components(world, {^AmbientLight, engine.Name}) {
+		n, _ := ecs.get_component(world, ent, engine.Name)
+		if name == n^ {
+			l, _ := ecs.get_component(world, ent, ^AmbientLight)
+			light = l^
+			break
+		}
+	}
+
 	model_free(light._model)
 	free(light)
-}
-
-
-ambientlight_draw :: proc(self: ^AmbientLight, shader: ShaderProgram) {
-	shader_set_uniform(shader, "model", &self._transform.model_matrix)
-	model_draw(self._model, shader)
 }

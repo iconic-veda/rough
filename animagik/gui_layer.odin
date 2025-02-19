@@ -13,7 +13,7 @@ import glm "core:math/linalg/glsl"
 import ecs "../freya/vendor/odin-ecs"
 import im "../freya/vendor/odin-imgui"
 
-camera_controller: engine.FPSCameraController
+camera_controller: engine.EditorCameraController
 viewport_fb: ^renderer.FrameBuffer
 
 scene_panel: ^gui_panels.ScenePanel
@@ -22,8 +22,6 @@ entities_world: ecs.Context
 
 is_cursor_captured: bool = true
 is_wire_mode: bool = false
-
-ambient_light: ^renderer.AmbientLight
 
 GuiLayer :: struct {
 	using base: engine.Layer,
@@ -51,7 +49,7 @@ initialize :: proc() {
 		},
 	)
 
-	camera_controller = engine.new_fps_camera_controller(800.0 / 600.0)
+	camera_controller = engine.new_editor_camera_controller(800.0 / 600.0)
 
 	viewport_fb = renderer.framebuffer_new(
 		800,
@@ -109,10 +107,12 @@ initialize :: proc() {
 		}
 
 		{ 	// Ambient light
-			ambient_light = renderer.ambientlight_new(
+			renderer.ambientlight_add_from_entity_world(
+				&entities_world,
+				engine.Name("Ambient Light 1"),
 				glm.vec3{10.0, 10.0, 20.0},
-				glm.vec3{0.2, 0.2, 0.2},
 				glm.vec3{0.5, 0.5, 0.5},
+				glm.vec3{1.0, 1.0, 1.0},
 				glm.vec3{1.0, 1.0, 1.0},
 			)
 		}
@@ -139,7 +139,10 @@ shutdown :: proc() {
 		}
 		ecs.deinit_ecs(&entities_world)
 
-		renderer.ambientlight_free(ambient_light)
+		renderer.ambientlight_remove_from_entity_world(
+			engine.Name("Ambient Light 1"),
+			&entities_world,
+		)
 	}
 
 	{ 	// Gui panels
@@ -160,7 +163,33 @@ render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
 	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
 
-	{ 	// Render models
+	{ 	// Render entities
+
+		ambient_light: ^renderer.AmbientLight = nil
+		for ent in ecs.get_entities_with_components(&entities_world, {^renderer.AmbientLight}) {
+			ambient_light_comp, err := ecs.get_component(
+				&entities_world,
+				ent,
+				^renderer.AmbientLight,
+			)
+
+			if err == ecs.ECS_Error.NO_ERROR {
+				ambient_light = ambient_light_comp^
+
+				transform, err := ecs.get_component(&entities_world, ent, engine.Transform)
+				if err == ecs.ECS_Error.NO_ERROR {
+					renderer.renderer_draw_light(
+						ambient_light,
+						transform,
+						&camera_controller._position,
+						&camera_controller.view_mat,
+						&camera_controller.proj_mat,
+					)
+				}
+				break
+			}
+		}
+
 		for ent in ecs.get_entities_with_components(
 			&entities_world,
 			{^renderer.Model, engine.Transform},
