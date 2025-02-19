@@ -65,6 +65,7 @@ ambientlight_remove_from_entity_world :: proc(name: engine.Name, world: ^ecs.Con
 	for ent in ecs.get_entities_with_components(world, {^AmbientLight, engine.Name}) {
 		n, _ := ecs.get_component(world, ent, engine.Name)
 		if name == n^ {
+			delete_string(n^)
 			l, _ := ecs.get_component(world, ent, ^AmbientLight)
 			light = l^
 			break

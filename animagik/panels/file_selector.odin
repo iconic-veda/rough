@@ -23,6 +23,10 @@ file_selector_new :: proc() -> ^FileSelector {
 	return selector
 }
 
+file_selector_free :: proc(self: ^FileSelector) {
+	free(self)
+}
+
 file_selector_reset :: proc(selector: ^FileSelector) {
 	selector.parent_dir = "."
 	selector.selected_file_path = ""

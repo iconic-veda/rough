@@ -138,12 +138,18 @@ shutdown :: proc() {
 			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
 			renderer.model_free(model^)
 		}
-		ecs.deinit_ecs(&entities_world)
+
+		for ent in ecs.get_entities_with_components(&entities_world, {^renderer.Animator}) {
+			animator, _ := ecs.get_component(&entities_world, ent, ^renderer.Animator)
+			renderer.animator_free(animator^)
+		}
 
 		renderer.ambientlight_remove_from_entity_world(
 			engine.Name("Ambient Light 1"),
 			&entities_world,
 		)
+
+		ecs.deinit_ecs(&entities_world)
 	}
 
 	{ 	// Gui panels

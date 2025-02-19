@@ -596,16 +596,31 @@ anim_find_bone :: proc(self: ^Animation, name: string) -> ^Bone {
 	return nil
 }
 
-animation_free :: proc(animation: ^Animation) {
-	for &bone in animation.bones {
+animation_free :: proc(self: ^Animation) {
+	for &bone in self.bones {
 		bone_free(bone)
 	}
 
-	for &data in animation.root_node.children {
+	for &data in self.root_node.children {
 		delete(data.name)
 	}
 
-	delete_map(animation.bone_info_map)
-	delete(animation.bones)
-	free(animation)
+	stack: [dynamic]AssimpNodeData = make([dynamic]AssimpNodeData, 0)
+	defer delete(stack)
+
+	append(&stack, self.root_node)
+
+	for len(stack) > 0 {
+		node := pop(&stack)
+
+		for &child in node.children {
+			append(&stack, child)
+		}
+
+		delete(node.children)
+	}
+
+	// delete_map(animation.bone_info_map) // NOTE: It will be deleted by the model
+	delete(self.bones)
+	free(self)
 }

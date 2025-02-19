@@ -70,10 +70,10 @@ renderer_draw_model :: proc(
 	shader_set_uniform(RENDERER.material_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.material_shader, "view", view_mat)
 
-	shader_set_uniform(RENDERER.material_shader, "light.position", &ambient_light.position)
-	shader_set_uniform(RENDERER.material_shader, "light.ambient", &ambient_light.ambient)
-	shader_set_uniform(RENDERER.material_shader, "light.diffuse", &ambient_light.diffuse)
-	shader_set_uniform(RENDERER.material_shader, "light.specular", &ambient_light.specular)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.position", &ambient_light.position)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.ambient", &ambient_light.ambient)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.diffuse", &ambient_light.diffuse)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.specular", &ambient_light.specular)
 
 
 	if animator != nil {
@@ -111,10 +111,10 @@ renderer_draw_model_outlined :: proc(
 	shader_set_uniform(RENDERER.material_shader, "view", view_mat)
 	shader_set_uniform(RENDERER.material_shader, "model", &transform.model_matrix)
 
-	shader_set_uniform(RENDERER.material_shader, "light.position", &ambient_light.position)
-	shader_set_uniform(RENDERER.material_shader, "light.ambient", &ambient_light.ambient)
-	shader_set_uniform(RENDERER.material_shader, "light.diffuse", &ambient_light.diffuse)
-	shader_set_uniform(RENDERER.material_shader, "light.specular", &ambient_light.specular)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.position", &ambient_light.position)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.ambient", &ambient_light.ambient)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.diffuse", &ambient_light.diffuse)
+	shader_set_uniform(RENDERER.material_shader, "ambientLight.specular", &ambient_light.specular)
 
 	if animator != nil {
 		transforms := animator.final_bone_matrices

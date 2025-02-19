@@ -32,6 +32,7 @@ scene_panel_new :: proc(entities_world: ^ecs.Context) -> ^ScenePanel {
 }
 
 scene_panel_destroy :: proc(panel: ^ScenePanel) {
+	file_selector_free(panel.model_file_selector)
 	free(panel)
 }
 

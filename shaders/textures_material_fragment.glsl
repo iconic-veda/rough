@@ -17,7 +17,7 @@ struct Material {
     float shininess;
 };
 
-struct Light {
+struct AmbientLight {
     vec3 position;
     vec3 ambient;
     vec3 diffuse;
@@ -25,7 +25,7 @@ struct Light {
 };
 
 uniform Material material;
-uniform Light light;
+uniform AmbientLight ambientLight;
 uniform vec3 viewPos;
 
 uniform float useDiffuse;
@@ -74,21 +74,21 @@ void main()
     // Ambient lighting
     vec3 ambient;
     if (useAmbient > 0.0) {
-        ambient = light.ambient * ambientColor;
+        ambient = ambientLight.ambient * ambientColor;
     } else {
-        ambient = light.ambient * diffuseColor;
+        ambient = ambientLight.ambient * diffuseColor;
     }
 
     // Diffuse lighting
-    vec3 lightDir = normalize(light.position - fs_in.FragPos);
+    vec3 lightDir = normalize(ambientLight.position - fs_in.FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff * diffuseColor;
+    vec3 diffuse = ambientLight.diffuse * diff * diffuseColor;
 
     // Specular lighting
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * specularColor;
+    vec3 specular = ambientLight.specular * spec * specularColor;
 
     vec3 result;
     if (useSpecular > 1.0) {
