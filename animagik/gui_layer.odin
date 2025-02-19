@@ -20,6 +20,7 @@ scene_panel: ^gui_panels.ScenePanel
 
 entities_world: ecs.Context
 
+is_viewport_overed: bool = false
 is_cursor_captured: bool = true
 is_wire_mode: bool = false
 
@@ -151,7 +152,9 @@ shutdown :: proc() {
 }
 
 update :: proc(dt: f64) {
-	engine.camera_on_update(&camera_controller, dt)
+	if is_viewport_overed {
+		engine.camera_on_update(&camera_controller, dt)
+	}
 
 	for ent in ecs.get_entities_with_components(&entities_world, {^renderer.Animator}) {
 		animator, _ := ecs.get_component(&entities_world, ent, ^renderer.Animator)
@@ -164,7 +167,6 @@ render :: proc() {
 	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
 
 	{ 	// Render entities
-
 		ambient_light: ^renderer.AmbientLight = nil
 		for ent in ecs.get_entities_with_components(&entities_world, {^renderer.AmbientLight}) {
 			ambient_light_comp, err := ecs.get_component(
@@ -277,6 +279,7 @@ imgui_render :: proc() {
 
 	im.PushStyleVarImVec2(im.StyleVar.WindowPadding, im.Vec2{0, 0})
 	im.Begin("Viewport")
+	is_viewport_overed = im.IsWindowHovered()
 	content_region := im.GetContentRegionAvail()
 
 	@(static) win_width: f32 = 0

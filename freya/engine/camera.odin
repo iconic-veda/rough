@@ -90,7 +90,7 @@ new_editor_camera_controller :: proc(
 		_position = {0.0, 0.0, 0.0},
 		_focus = {0.0, 0.0, 0.0},
 		_rotation_speed = 0.1,
-		_translation_speed = 0.005,
+		_translation_speed = 0.1,
 		_first_mouse = true,
 	}
 }
@@ -133,6 +133,17 @@ editor_camera_on_update :: proc(controller: ^EditorCameraController, dt: f64) {
 		controller._yaw += xoffset * controller._rotation_speed
 		controller._pitch -= yoffset * controller._rotation_speed
 		controller._pitch = glm.clamp(controller._pitch, -89.0, 89.0)
+	}
+
+	if is_button_pressed(MouseButton.ButtonLeft) {
+		// controller._focus += controller._right * xoffset * controller._translation_speed
+		// controller._focus -= controller._up * yoffset * controller._translation_speed
+
+		translation :=
+			(-controller._right * xoffset + controller._up * yoffset) *
+			controller._translation_speed
+		controller._focus += translation
+		controller._position += translation
 	}
 
 	// Update camera position to orbit around focus point
