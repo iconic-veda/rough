@@ -122,3 +122,11 @@ reset_stencil_testing :: proc() {
 	gl.StencilFunc(gl.ALWAYS, 1, 0xFF)
 	// gl.Enable(gl.DEPTH_TEST)
 }
+
+set_depth_func_to_default :: proc() {
+	gl.DepthFunc(gl.LESS)
+}
+
+set_depth_func_to_equal :: proc() {
+	gl.DepthFunc(gl.LEQUAL)
+}

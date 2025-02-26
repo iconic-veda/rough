@@ -14,6 +14,7 @@ Renderer :: struct {
 	material_shader:      ShaderProgram,
 	ambient_light_shader: ShaderProgram,
 	grid_shader:          ShaderProgram,
+	skybox_shader:        ShaderProgram,
 }
 
 renderer_initialize :: proc() {
@@ -37,6 +38,11 @@ renderer_initialize :: proc() {
 	RENDERER.grid_shader = shader_new(
 		#load("../../shaders/grid_vert.glsl"),
 		#load("../../shaders/grid_frag.glsl"),
+	)
+
+	RENDERER.skybox_shader = shader_new(
+		#load("../../shaders/skybox_shader_vertex.glsl"),
+		#load("../../shaders/skybox_shader_fragment.glsl"),
 	)
 
 }
@@ -164,6 +170,17 @@ renderer_draw_model_outlined :: proc(
 	shader_set_uniform(RENDERER.outline_shader, "model", &newtransform)
 	model_draw(model, RENDERER.outline_shader)
 	reset_stencil_testing()
+}
+
+render_skybox :: proc(cubemap: ^Cubemap, view_mat, proj_mat: ^glm.mat4) {
+	toggle_depth_writing(false)
+	shader_use(RENDERER.skybox_shader)
+	shader_set_uniform(RENDERER.skybox_shader, "projection", proj_mat)
+	shader_set_uniform(RENDERER.skybox_shader, "view", view_mat)
+
+	cubemap_draw(cubemap)
+
+	toggle_depth_writing(true)
 }
 
 renderer_draw_light :: proc(

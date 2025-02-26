@@ -62,7 +62,7 @@ void main() {
     float fade = max(0, 1.0 - compute_fade(frag_pos_3d));
 
     // This add multiple resolutions for the grid
-    FragColor = (grid(frag_pos_3d, 10) + grid(frag_pos_3d, 1)) * 0.9;
+    FragColor = (grid(frag_pos_3d, 1) + grid(frag_pos_3d, 5)) * 0.9;
     FragColor *= float(t > 0);
     FragColor *= fade;
 

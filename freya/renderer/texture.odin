@@ -8,6 +8,13 @@ import exr "vendor:OpenEXRCore"
 import gl "vendor:OpenGL"
 import stb_img "vendor:stb/image"
 
+Skybox :: Cubemap
+
+Cubemap :: struct {
+	using tex: Texture,
+	_vao:      u32,
+	_vbo:      u32,
+}
 
 Texture :: struct {
 	id:   u32,
@@ -30,7 +37,6 @@ TextureError :: enum {
 }
 
 texture_new :: proc(file_path: string, type: TextureType) -> (^Texture, TextureError) {
-
 	data: [1024]u8
 
 	arena: mem.Arena
@@ -53,11 +59,12 @@ texture_new_with_stb :: proc(file_path: string, type: TextureType) -> (^Texture,
 	width, height, channels: i32
 	stb_img.set_flip_vertically_on_load(1)
 	data: [^]byte = stb_img.load(filename, &width, &height, &channels, 0)
+	defer stb_img.image_free(data)
 
 	if data == nil {
 		log.errorf("Failed to load texture of type %v, path: %s\n", type, file_path)
+		return nil, TextureError.FailedToLoad
 	}
-	defer stb_img.image_free(data)
 
 	format: i32
 	switch channels {
@@ -321,4 +328,192 @@ texture_new_empty :: proc(width: i32, height: i32) -> (^Texture, TextureError) {
 texture_free :: proc(texture: ^Texture) {
 	gl.DeleteTextures(1, &texture.id)
 	free(texture)
+}
+
+cubemap_new :: proc(file_paths: [6]string) -> (^Cubemap, TextureError) {
+	cubemap: u32 = 0
+	gl.GenTextures(1, &cubemap)
+	gl.BindTexture(gl.TEXTURE_CUBE_MAP, cubemap)
+
+	for i in 0 ..< 6 {
+		filename := strings.unsafe_string_to_cstring(file_paths[i])
+
+		width, height, channels: i32
+		stb_img.set_flip_vertically_on_load(0)
+		data: [^]byte = stb_img.load(filename, &width, &height, &channels, 0)
+		defer stb_img.image_free(data)
+
+		if data == nil {
+			log.errorf("Failed to load cubemap texture, path: %s\n", file_paths[i])
+			continue
+		}
+
+		format: i32
+		switch channels {
+		case 1:
+			format = gl.RED
+		case 3:
+			format = gl.RGB
+		case 4:
+			format = gl.RGBA
+		}
+
+		gl.TexImage2D(
+			u32(gl.TEXTURE_CUBE_MAP_POSITIVE_X + int(i)),
+			0,
+			format,
+			width,
+			height,
+			0,
+			u32(format),
+			gl.UNSIGNED_BYTE,
+			data,
+		)
+	}
+
+	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE)
+
+	c := new(Cubemap)
+	c.id = cubemap
+
+	{ 	// Create object
+		@(static) vertices: []f32 = {
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			-1.0,
+			1.0,
+			1.0,
+			-1.0,
+			1.0,
+		}
+
+		gl.GenVertexArrays(1, &c._vao)
+		gl.GenBuffers(1, &c._vbo)
+		gl.BindVertexArray(c._vao)
+		gl.BindBuffer(gl.ARRAY_BUFFER, c._vbo)
+		gl.BufferData(gl.ARRAY_BUFFER, len(vertices) * size_of(f32), &vertices[0], gl.STATIC_DRAW)
+		gl.EnableVertexAttribArray(0)
+		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * size_of(f32), uintptr(0))
+	}
+
+	return c, TextureError.NoError
+}
+
+cubemap_draw :: proc(self: ^Cubemap) {
+	gl.BindVertexArray(self._vao)
+	gl.BindTexture(gl.TEXTURE_CUBE_MAP, self.id)
+	gl.DrawArrays(gl.TRIANGLES, 0, 36)
+
+}
+
+cubemap_free :: proc(self: ^Cubemap) {
+	gl.DeleteVertexArrays(1, &self._vao)
+	gl.DeleteBuffers(1, &self._vbo)
+	gl.DeleteTextures(1, &self.id)
+	free(self)
 }

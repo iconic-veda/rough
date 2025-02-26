@@ -15,6 +15,7 @@ import im "../freya/vendor/odin-imgui"
 
 camera_controller: engine.EditorCameraController
 viewport_fb: ^renderer.FrameBuffer
+cubemap: ^renderer.Cubemap
 
 scene_panel: ^gui_panels.ScenePanel
 
@@ -87,25 +88,25 @@ initialize :: proc() {
 			ecs.add_component(&entities_world, ent, engine.Name("Dragon"))
 		}
 
-		{
-			ent := ecs.create_entity(&entities_world)
-			model_component := renderer.model_new("assets/models/backpack/backpack.obj")
-			ecs.add_component(&entities_world, ent, model_component)
-			t := engine.Transform {
-				glm.vec3{0.0, 6, -1.5},
-				glm.vec3{0.0, 3.142, 0.0},
-				glm.vec3{0.8, 0.8, 0.8},
-				glm.mat4Translate({0.0, 0.0, 0.0}),
-			}
-			t.model_matrix =
-				glm.mat4Translate(t.position) *
-				glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
-				glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
-				glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
-				glm.mat4Scale(t.scale)
-			ecs.add_component(&entities_world, ent, t)
-			ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
-		}
+		// {
+		// 	ent := ecs.create_entity(&entities_world)
+		// 	model_component := renderer.model_new("assets/models/backpack/backpack.obj")
+		// 	ecs.add_component(&entities_world, ent, model_component)
+		// 	t := engine.Transform {
+		// 		glm.vec3{0.0, 6, -1.5},
+		// 		glm.vec3{0.0, 3.142, 0.0},
+		// 		glm.vec3{0.8, 0.8, 0.8},
+		// 		glm.mat4Translate({0.0, 0.0, 0.0}),
+		// 	}
+		// 	t.model_matrix =
+		// 		glm.mat4Translate(t.position) *
+		// 		glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
+		// 		glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
+		// 		glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
+		// 		glm.mat4Scale(t.scale)
+		// 	ecs.add_component(&entities_world, ent, t)
+		// 	ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
+		// }
 
 		{ 	// Ambient light
 			renderer.ambientlight_add_from_entity_world(
@@ -119,6 +120,19 @@ initialize :: proc() {
 		}
 	}
 
+	{ 	// Cubemap, TODO: Check error
+		cubemap, _ = renderer.cubemap_new(
+			{
+				"assets/skyboxes/normal_sky/right.jpg",
+				"assets/skyboxes/normal_sky/left.jpg",
+				"assets/skyboxes/normal_sky/top.jpg",
+				"assets/skyboxes/normal_sky/bottom.jpg",
+				"assets/skyboxes/normal_sky/front.jpg",
+				"assets/skyboxes/normal_sky/back.jpg",
+			},
+		)
+	}
+
 
 	{ 	// Gui panels
 		scene_panel = gui_panels.scene_panel_new(&entities_world)
@@ -127,6 +141,7 @@ initialize :: proc() {
 
 shutdown :: proc() {
 	renderer.framebuffer_free(viewport_fb)
+	renderer.cubemap_free(cubemap)
 
 	{ 	// Clear entities world
 		// TODO: Get all entities and free them in the correct way
@@ -171,6 +186,8 @@ update :: proc(dt: f64) {
 render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
 	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
+
+	renderer.render_skybox(cubemap, &camera_controller.view_mat, &camera_controller.proj_mat)
 
 	{ 	// Render entities
 		ambient_light: ^renderer.AmbientLight = nil

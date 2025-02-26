@@ -129,7 +129,7 @@ editor_camera_on_update :: proc(controller: ^EditorCameraController, dt: f64) {
 	yoffset := position.y - controller._last_mouse_pos.y
 	controller._last_mouse_pos = position
 
-	if is_button_pressed(MouseButton.ButtonMiddle) {
+	if is_button_pressed(MouseButton.ButtonMiddle) || is_key_pressed(KeyCode.RightAlt) {
 		controller._yaw += xoffset * controller._rotation_speed
 		controller._pitch -= yoffset * controller._rotation_speed
 		controller._pitch = glm.clamp(controller._pitch, -89.0, 89.0)
