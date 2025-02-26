@@ -115,18 +115,6 @@ mesh_draw_with_material :: proc(m: ^Mesh, shader: ShaderProgram) {
 				}
 			}
 
-			{ 	// Ambient
-				ambient, err := resource_manager_get_texture(material.ambient_texture)
-				if err == ResourceManagerError.NoError {
-					shader_set_uniform(shader, "material.ambient", 4)
-					shader_set_uniform(shader, "useAmbient", f32(1.0))
-					gl.ActiveTexture(gl.TEXTURE0 + 4)
-					gl.BindTexture(gl.TEXTURE_2D, ambient.id)
-				} else {
-					shader_set_uniform(shader, "useAmbient", f32(0.0))
-				}
-			}
-
 			{ 	// Shininess
 				shader_set_uniform(shader, "material.shininess", material.shininess)
 			}

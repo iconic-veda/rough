@@ -379,35 +379,35 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 
 			normal = resource_manager_add(texture_path, TextureType.Normals)
 		}
-		if assimp.get_material_textureCount(mat, assimp.TextureType.AMBIENT) > 0 {
-			relative_path: assimp.String
-			mapping: assimp.TextureMapping
-			uvindex: u32
-			blend: f64
-			op: assimp.TextureOp
-			mapmode: assimp.TextureMapMode
-			if assimp.get_material_texture(
-				   mat,
-				   assimp.TextureType.AMBIENT,
-				   0,
-				   &relative_path,
-				   &mapping,
-				   &uvindex,
-				   &blend,
-				   &op,
-				   &mapmode,
-			   ) !=
-			   assimp.Return.SUCCESS {
-				log.error("Failed to get material texture")
-				continue
-			}
-
-			texture_path := filepath.join(
-				{base_path, assimp.string_clone_from_ai_string(&relative_path)},
-			)
-
-			ambient = resource_manager_add(texture_path, TextureType.Ambient)
-		}
+		// if assimp.get_material_textureCount(mat, assimp.TextureType.AMBIENT) > 0 {
+		// 	relative_path: assimp.String
+		// 	mapping: assimp.TextureMapping
+		// 	uvindex: u32
+		// 	blend: f64
+		// 	op: assimp.TextureOp
+		// 	mapmode: assimp.TextureMapMode
+		// 	if assimp.get_material_texture(
+		// 		   mat,
+		// 		   assimp.TextureType.AMBIENT,
+		// 		   0,
+		// 		   &relative_path,
+		// 		   &mapping,
+		// 		   &uvindex,
+		// 		   &blend,
+		// 		   &op,
+		// 		   &mapmode,
+		// 	   ) !=
+		// 	   assimp.Return.SUCCESS {
+		// 		log.error("Failed to get material texture")
+		// 		continue
+		// 	}
+		//
+		// 	texture_path := filepath.join(
+		// 		{base_path, assimp.string_clone_from_ai_string(&relative_path)},
+		// 	)
+		//
+		// 	ambient = resource_manager_add(texture_path, TextureType.Ambient)
+		// }
 
 		// if shininess == 0.0 && diffuse == "" && specular == "" && height == "" && ambient == "" {
 		// continue
@@ -421,7 +421,6 @@ extract_materials :: proc(model: ^Model, scene: ^assimp.Scene, base_path: string
 				specular,
 				height,
 				normal,
-				ambient,
 				shininess,
 			),
 		)

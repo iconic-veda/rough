@@ -59,7 +59,7 @@ resource_manager_get_material :: proc(
 
 resource_manager_add_material :: proc(
 	name: string,
-	diffuse, specular, height, normal, ambient: TextureHandle,
+	diffuse, specular, height, normal: TextureHandle,
 	shininess: f64,
 ) -> MaterialHandle {
 	// digest := hash.hash(hash.Algorithm.Insecure_SHA1, name)
@@ -77,7 +77,6 @@ resource_manager_add_material :: proc(
 		specular,
 		height,
 		normal,
-		ambient,
 		shininess,
 	)
 

@@ -10,7 +10,6 @@ in VS_OUT {
 
 struct Material {
     sampler2D diffuse; // Diffuse (albedo) map
-    sampler2D ambient; // Ambient map
     sampler2D specular; // Specular map
     sampler2D normal; // Normal map
     sampler2D height; // Height map for parallax mapping
@@ -29,7 +28,6 @@ uniform AmbientLight ambientLight;
 uniform vec3 viewPos;
 
 uniform float useDiffuse;
-uniform float useAmbient;
 uniform float useSpecular;
 uniform float useNormal;
 
@@ -54,11 +52,9 @@ void main()
 
     vec3 defaultColor = vec3(1.0);
     vec3 diffuseTex = texture(material.diffuse, texCoords).rgb;
-    vec3 ambientTex = texture(material.ambient, texCoords).rgb;
     vec3 specularTex = texture(material.specular, texCoords).rgb;
 
     vec3 diffuseColor = mix(defaultColor, diffuseTex, useDiffuse);
-    vec3 ambientColor = mix(defaultColor, ambientTex, useAmbient);
     vec3 specularColor = mix(defaultColor, specularTex, useSpecular);
 
     // Normal mapping
@@ -72,12 +68,7 @@ void main()
     vec3 norm = normalize(fs_in.TBN * normTangent);
 
     // Ambient lighting
-    vec3 ambient;
-    if (useAmbient > 0.0) {
-        ambient = ambientLight.ambient * ambientColor;
-    } else {
-        ambient = ambientLight.ambient * diffuseColor;
-    }
+    vec3 ambient = ambientLight.ambient * diffuseColor;
 
     // Diffuse lighting
     vec3 lightDir = normalize(ambientLight.position - fs_in.FragPos);
