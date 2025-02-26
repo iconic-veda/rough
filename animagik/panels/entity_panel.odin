@@ -22,11 +22,13 @@ ScenePanel :: struct {
 	entities_world:      ^ecs.Context,
 	selected_entity:     ecs.Entity,
 	model_file_selector: ^FileSelector,
+	should_draw_grid:    bool,
 }
 
 scene_panel_new :: proc(entities_world: ^ecs.Context) -> ^ScenePanel {
 	panel := new(ScenePanel)
 	panel.entities_world = entities_world
+	panel.should_draw_grid = true
 	panel.model_file_selector = file_selector_new()
 	return panel
 }

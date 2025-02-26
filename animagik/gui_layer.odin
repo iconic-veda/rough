@@ -254,7 +254,10 @@ render :: proc() {
 
 	renderer.render_skybox(cubemap, &camera_controller.view_mat, &camera_controller.proj_mat)
 
-	renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
+	if scene_panel.should_draw_grid {
+		renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
+	}
+
 	renderer.framebuffer_unbind()
 }
 
@@ -293,6 +296,11 @@ imgui_render :: proc() {
 			}
 
 			if im.BeginMenu("File") {
+				im.EndMenu()
+			}
+
+			if im.BeginMenu("View") {
+				im.Checkbox("Draw Grid", &scene_panel.should_draw_grid)
 				im.EndMenu()
 			}
 			im.EndMenuBar()
