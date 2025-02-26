@@ -187,7 +187,6 @@ render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
 	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
 
-	renderer.render_skybox(cubemap, &camera_controller.view_mat, &camera_controller.proj_mat)
 
 	{ 	// Render entities
 		ambient_light: ^renderer.AmbientLight = nil
@@ -252,6 +251,8 @@ render :: proc() {
 			}
 		}
 	}
+
+	renderer.render_skybox(cubemap, &camera_controller.view_mat, &camera_controller.proj_mat)
 
 	renderer.renderer_draw_grid(&camera_controller.view_mat, &camera_controller.proj_mat)
 	renderer.framebuffer_unbind()

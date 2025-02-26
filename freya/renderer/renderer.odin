@@ -173,14 +173,13 @@ renderer_draw_model_outlined :: proc(
 }
 
 render_skybox :: proc(cubemap: ^Cubemap, view_mat, proj_mat: ^glm.mat4) {
-	toggle_depth_writing(false)
+	set_depth_func_to_equal()
 	shader_use(RENDERER.skybox_shader)
 	shader_set_uniform(RENDERER.skybox_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.skybox_shader, "view", view_mat)
 
 	cubemap_draw(cubemap)
-
-	toggle_depth_writing(true)
+	set_depth_func_to_default()
 }
 
 renderer_draw_light :: proc(
