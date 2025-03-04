@@ -276,7 +276,7 @@ imgui_render :: proc() {
 		viewport := im.GetMainViewport()
 		im.SetNextWindowPos(viewport.WorkPos)
 		im.SetNextWindowSize(viewport.WorkSize)
-		im.SetNextWindowViewport(viewport._ID)
+		im.SetNextWindowViewport(viewport.ID_)
 
 		im.PushStyleVar(im.StyleVar.WindowRounding, 0.0)
 		im.PushStyleVar(im.StyleVar.WindowBorderSize, 0.0)

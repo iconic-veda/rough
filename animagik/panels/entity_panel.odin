@@ -76,6 +76,12 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 		// TODO: Change font size/style(bold)
 		im.Text("Entity name: %s", strings.unsafe_string_to_cstring(name^))
 
+		if im.Button("Delete entity") {
+			ecs.destroy_entity(panel.entities_world, panel.selected_entity)
+			im.End()
+			return
+		}
+
 		{ 	// TRANSFORM COMPONENT
 			im.SeparatorText("Transform")
 			transform, err := ecs.get_component(
@@ -113,6 +119,14 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 				node_tree_dialog(&root_node)
 			}
 		}
+
+		// TODO: Add buttons to add components
+		// - Mesh
+		// - Model
+		// - Light
+		// - Camera
+		// - Animation
+		// - Transform
 	}
 	im.End()
 
@@ -192,24 +206,7 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 							{0, 0, 0, 0},
 						)
 					}
-
-					ambient, ambienterr := renderer.resource_manager_get_texture(
-						material.ambient_texture,
-					)
-					if ambienterr == renderer.ResourceManagerError.NoError {
-						im.Text("Ambient texture")
-						im.Image(
-							im.TextureID(uintptr(ambient.id)),
-							{100, 100},
-							{0, 1},
-							{1, 0},
-							{1, 1, 1, 1},
-							{0, 0, 0, 0},
-						)
-					}
-
 					im.Text("Material - shininess : %f", material.shininess)
-
 					im.Separator()
 				}
 			}
