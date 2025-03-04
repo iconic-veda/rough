@@ -14,13 +14,13 @@ What you need to have to build the project:
 Clone the repo with the following command:
 
 ```sh
-git clone --recurse-submodules git@github.com:kosmios1/freya.git
+git clone --recurse-submodules git@github.com:bytemomo/freya.git
 ```
 
-Then use the following command to setup the project:
+or if you have already cloned the repo, run the following command:
 
 ```sh
-just setup
+git submodule update --init --recursive
 ```
 
 ## Run
