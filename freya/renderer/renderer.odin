@@ -26,8 +26,8 @@ renderer_initialize :: proc() {
 	)
 
 	RENDERER.outline_shader = shader_new(
-		#load("../../shaders/textures_material_vertex.glsl"),
-		#load("../../shaders/single_color_fragment.glsl"),
+		#load("../../shaders/outline_shader_vertex.glsl"),
+		#load("../../shaders/outline_shader_fragment.glsl"),
 	)
 
 	RENDERER.ambient_light_shader = shader_new(
@@ -143,9 +143,7 @@ renderer_draw_model_outlined :: proc(
 	shader_use(RENDERER.outline_shader)
 	shader_set_uniform(RENDERER.outline_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.outline_shader, "view", view_mat)
-
-	new_model := transform.model_matrix * glm.mat4Scale({1.01, 1.01, 1.01})
-	shader_set_uniform(RENDERER.outline_shader, "model", &new_model)
+	shader_set_uniform(RENDERER.outline_shader, "model", &transform.model_matrix)
 
 	if animator != nil {
 		transforms := animator.final_bone_matrices
