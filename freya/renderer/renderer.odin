@@ -144,6 +144,9 @@ renderer_draw_model_outlined :: proc(
 	shader_set_uniform(RENDERER.outline_shader, "projection", proj_mat)
 	shader_set_uniform(RENDERER.outline_shader, "view", view_mat)
 
+	new_model := transform.model_matrix * glm.mat4Scale({1.01, 1.01, 1.01})
+	shader_set_uniform(RENDERER.outline_shader, "model", &new_model)
+
 	if animator != nil {
 		transforms := animator.final_bone_matrices
 		for i in 0 ..< len(transforms) {
@@ -160,14 +163,6 @@ renderer_draw_model_outlined :: proc(
 		shader_set_uniform(RENDERER.outline_shader, "hasAnimation", f32(0.0))
 	}
 
-	newtransform :=
-		glm.mat4Translate(transform.position) *
-		glm.mat4Rotate({1, 0, 0}, transform.rotation.x) *
-		glm.mat4Rotate({0, 1, 0}, transform.rotation.y) *
-		glm.mat4Rotate({0, 0, 1}, transform.rotation.z) *
-		glm.mat4Scale(transform.scale * 1.01)
-
-	shader_set_uniform(RENDERER.outline_shader, "model", &newtransform)
 	model_draw(model, RENDERER.outline_shader)
 	reset_stencil_testing()
 }

@@ -3,6 +3,8 @@ package engine
 import "vendor:glfw"
 
 import im "../vendor/odin-imgui"
+import guizmo "../vendor/odin-imguizmo"
+
 import "../vendor/odin-imgui/imgui_impl_glfw"
 import "../vendor/odin-imgui/imgui_impl_opengl3"
 
@@ -39,6 +41,7 @@ begin_imgui :: proc() {
 	imgui_impl_opengl3.NewFrame()
 	imgui_impl_glfw.NewFrame()
 	im.NewFrame()
+	guizmo.begin_frame()
 }
 
 end_imgui :: proc() {

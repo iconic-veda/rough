@@ -11,7 +11,9 @@ import renderer "../freya/renderer"
 import glm "core:math/linalg/glsl"
 
 import ecs "../freya/vendor/odin-ecs"
+
 import im "../freya/vendor/odin-imgui"
+import guizmo "../freya/vendor/odin-imguizmo"
 
 camera_controller: engine.EditorCameraController
 viewport_fb: ^renderer.FrameBuffer
@@ -24,6 +26,9 @@ entities_world: ecs.Context
 is_viewport_overed: bool = false
 is_cursor_captured: bool = true
 is_wire_mode: bool = false
+
+currentGirmoOperation: guizmo.Operation = guizmo.Operation.ROTATE
+currentGizmoMode: guizmo.Mode = guizmo.Mode.WORLD
 
 GuiLayer :: struct {
 	using base: engine.Layer,
@@ -87,26 +92,6 @@ initialize :: proc() {
 			ecs.add_component(&entities_world, ent, t)
 			ecs.add_component(&entities_world, ent, engine.Name("Dragon"))
 		}
-
-		// {
-		// 	ent := ecs.create_entity(&entities_world)
-		// 	model_component := renderer.model_new("assets/models/backpack/backpack.obj")
-		// 	ecs.add_component(&entities_world, ent, model_component)
-		// 	t := engine.Transform {
-		// 		glm.vec3{0.0, 6, -1.5},
-		// 		glm.vec3{0.0, 3.142, 0.0},
-		// 		glm.vec3{0.8, 0.8, 0.8},
-		// 		glm.mat4Translate({0.0, 0.0, 0.0}),
-		// 	}
-		// 	t.model_matrix =
-		// 		glm.mat4Translate(t.position) *
-		// 		glm.mat4Rotate({1, 0, 0}, t.rotation.x) *
-		// 		glm.mat4Rotate({0, 1, 0}, t.rotation.y) *
-		// 		glm.mat4Rotate({0, 0, 1}, t.rotation.z) *
-		// 		glm.mat4Scale(t.scale)
-		// 	ecs.add_component(&entities_world, ent, t)
-		// 	ecs.add_component(&entities_world, ent, engine.Name("Backpack"))
-		// }
 
 		{ 	// Ambient light
 			renderer.ambientlight_add_from_entity_world(
@@ -173,7 +158,7 @@ shutdown :: proc() {
 }
 
 update :: proc(dt: f64) {
-	if is_viewport_overed {
+	if is_viewport_overed && !guizmo.is_using() {
 		engine.camera_on_update(&camera_controller, dt)
 	}
 
@@ -331,11 +316,56 @@ imgui_render :: proc() {
 		im.Vec2{0, 1},
 		im.Vec2{1, 0},
 	)
+
+	{ 	// Gizmo
+		transform, err := ecs.get_component(
+			&entities_world,
+			scene_panel.selected_entity,
+			engine.Transform,
+		)
+
+		if err == ecs.ECS_Error.NO_ERROR {
+			guizmo.set_orthographic(false)
+			guizmo.set_draw_list()
+
+			pos := im.GetWindowPos()
+
+			guizmo.set_rect(pos.x, pos.y, win_width, win_height)
+
+			changed := guizmo.manipulate(
+				&camera_controller.camera.view_mat,
+				&camera_controller.camera.proj_mat,
+				&transform.model_matrix,
+				currentGirmoOperation,
+				currentGizmoMode,
+			)
+
+			if changed {
+				guizmo.decompose_matrix_to_components(
+					&transform.model_matrix,
+					&transform.position,
+					&transform.rotation,
+					&transform.scale,
+				)
+			}
+
+			if changed {
+				light, err := ecs.get_component(
+					scene_panel.entities_world,
+					scene_panel.selected_entity,
+					^renderer.AmbientLight,
+				)
+				if err == ecs.ECS_Error.NO_ERROR {
+					light^.position = transform.position
+				}
+			}
+		}
+	}
 	im.End()
 	im.PopStyleVar()
 
 	{ 	// Gui panels
-		gui_panels.scene_panel_render(scene_panel)
+		gui_panels.scene_panel_render(scene_panel, &camera_controller.camera)
 	}
 }
 
@@ -351,6 +381,16 @@ on_event :: proc(ev: engine.Event) {
 			if e.code == engine.KeyCode.K {
 				renderer.toggle_wire_mode(is_wire_mode)
 				is_wire_mode = !is_wire_mode
+			}
+
+			if e.code == engine.KeyCode.Tab {
+				if currentGirmoOperation == guizmo.Operation.TRANSLATE {
+					currentGirmoOperation = guizmo.Operation.ROTATE
+				} else if currentGirmoOperation == guizmo.Operation.ROTATE {
+					currentGirmoOperation = guizmo.Operation.SCALE
+				} else {
+					currentGirmoOperation = guizmo.Operation.TRANSLATE
+				}
 			}
 		}
 	}

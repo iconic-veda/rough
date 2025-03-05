@@ -12,6 +12,7 @@ import renderer "../../freya/renderer"
 import ecs "../../freya/vendor/odin-ecs"
 
 import im "../../freya/vendor/odin-imgui"
+import guizmo "../../freya/vendor/odin-imguizmo"
 
 import glm "core:math/linalg/glsl"
 
@@ -38,7 +39,7 @@ scene_panel_destroy :: proc(panel: ^ScenePanel) {
 	free(panel)
 }
 
-scene_panel_render :: proc(panel: ^ScenePanel) {
+scene_panel_render :: proc(panel: ^ScenePanel, camera: ^engine.PerspectiveCamera) {
 	im.Begin("Entities")
 
 	if im.Button("Add entity") {
@@ -91,6 +92,7 @@ scene_panel_render :: proc(panel: ^ScenePanel) {
 			)
 			if err == ecs.ECS_Error.NO_ERROR {
 				changed := transform_dialog(transform)
+
 				if changed {
 					light, err := ecs.get_component(
 						panel.entities_world,
