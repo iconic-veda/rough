@@ -47,14 +47,14 @@ void main()
         }
         normalMatrix = transpose(inverse(mat3(BoneTransform)));
         vec3 transformedNormal = normalize(normalMatrix * aNormal);
-        vec3 inflatedPos = totalPosition.xyz + ((transformedNormal * outlineThickness) / 10.0f);
+        vec3 inflatedPos = totalPosition.xyz + ((transformedNormal * outlineThickness) / 5.0f);
 
         worldPos = model * vec4(inflatedPos, 1.0);
     } else {
         normalMatrix = mat3(model);
 
         vec3 transformedNormal = normalize(normalMatrix * aNormal);
-        vec3 inflatedPos = aPos + transformedNormal * outlineThickness;
+        vec3 inflatedPos = aPos + ((transformedNormal * outlineThickness) / 5.0f);
 
         worldPos = model * vec4(inflatedPos, 1.0);
     }

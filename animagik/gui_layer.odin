@@ -26,6 +26,7 @@ entities_world: ecs.Context
 is_viewport_overed: bool = false
 is_cursor_captured: bool = true
 is_wire_mode: bool = false
+guizmo_is_enabled: bool = true
 
 currentGirmoOperation: guizmo.Operation = guizmo.Operation.ROTATE
 currentGizmoMode: guizmo.Mode = guizmo.Mode.WORLD
@@ -172,48 +173,65 @@ render :: proc() {
 	renderer.framebuffer_bind(viewport_fb)
 	renderer.clear_screen({0.28, 0.28, 0.28, 1.0})
 
-
 	{ 	// Render entities
 		ambient_light: ^renderer.AmbientLight = nil
-		for ent in ecs.get_entities_with_components(&entities_world, {^renderer.AmbientLight}) {
-			ambient_light_comp, err := ecs.get_component(
+		{ 	// Render lights
+			for ent in ecs.get_entities_with_components(
 				&entities_world,
-				ent,
-				^renderer.AmbientLight,
-			)
+				{^renderer.AmbientLight},
+			) {
+				ambient_light_comp, err := ecs.get_component(
+					&entities_world,
+					ent,
+					^renderer.AmbientLight,
+				)
 
-			if err == ecs.ECS_Error.NO_ERROR {
-				ambient_light = ambient_light_comp^
-
-				transform, err := ecs.get_component(&entities_world, ent, engine.Transform)
 				if err == ecs.ECS_Error.NO_ERROR {
-					renderer.renderer_draw_light(
-						ambient_light,
-						transform,
-						&camera_controller._position,
-						&camera_controller.view_mat,
-						&camera_controller.proj_mat,
-					)
+					ambient_light = ambient_light_comp^
+
+					transform, err := ecs.get_component(&entities_world, ent, engine.Transform)
+					if err == ecs.ECS_Error.NO_ERROR {
+						renderer.renderer_draw_light(
+							ambient_light,
+							transform,
+							&camera_controller._position,
+							&camera_controller.view_mat,
+							&camera_controller.proj_mat,
+						)
+					}
+					break
 				}
-				break
 			}
 		}
 
-		for ent in ecs.get_entities_with_components(
-			&entities_world,
-			{^renderer.Model, engine.Transform},
-		) {
-			model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
-			transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
+		{ 	// Render selected entity
+			if !ecs.has_component(
+				&entities_world,
+				scene_panel.selected_entity,
+				^renderer.AmbientLight,
+			) {
+				model, _ := ecs.get_component(
+					&entities_world,
+					scene_panel.selected_entity,
+					^renderer.Model,
+				)
+				transform, _ := ecs.get_component(
+					&entities_world,
+					scene_panel.selected_entity,
+					engine.Transform,
+				)
 
-			animator_comp, err := ecs.get_component(&entities_world, ent, ^renderer.Animator)
+				animator_comp, err := ecs.get_component(
+					&entities_world,
+					scene_panel.selected_entity,
+					^renderer.Animator,
+				)
 
-			animator: ^renderer.Animator = nil
-			if err == ecs.ECS_Error.NO_ERROR {
-				animator = animator_comp^
-			}
+				animator: ^renderer.Animator = nil
+				if err == ecs.ECS_Error.NO_ERROR {
+					animator = animator_comp^
+				}
 
-			if scene_panel.selected_entity == ent {
 				renderer.renderer_draw_model_outlined(
 					model^,
 					ambient_light,
@@ -223,16 +241,35 @@ render :: proc() {
 					&camera_controller.view_mat,
 					&camera_controller.proj_mat,
 				)
-			} else {
-				renderer.renderer_draw_model(
-					model^,
-					ambient_light,
-					animator,
-					transform,
-					&camera_controller._position,
-					&camera_controller.view_mat,
-					&camera_controller.proj_mat,
-				)
+			}
+		}
+
+		{ 	// Render models
+			for ent in ecs.get_entities_with_components(
+				&entities_world,
+				{^renderer.Model, engine.Transform},
+			) {
+				model, _ := ecs.get_component(&entities_world, ent, ^renderer.Model)
+				transform, _ := ecs.get_component(&entities_world, ent, engine.Transform)
+
+				animator_comp, err := ecs.get_component(&entities_world, ent, ^renderer.Animator)
+
+				animator: ^renderer.Animator = nil
+				if err == ecs.ECS_Error.NO_ERROR {
+					animator = animator_comp^
+				}
+
+				if scene_panel.selected_entity != ent {
+					renderer.renderer_draw_model(
+						model^,
+						ambient_light,
+						animator,
+						transform,
+						&camera_controller._position,
+						&camera_controller.view_mat,
+						&camera_controller.proj_mat,
+					)
+				}
 			}
 		}
 	}
@@ -286,6 +323,7 @@ imgui_render :: proc() {
 
 			if im.BeginMenu("View") {
 				im.Checkbox("Draw Grid", &scene_panel.should_draw_grid)
+				im.Checkbox("Gizmos", &guizmo_is_enabled)
 				im.EndMenu()
 			}
 			im.EndMenuBar()
@@ -317,7 +355,7 @@ imgui_render :: proc() {
 		im.Vec2{1, 0},
 	)
 
-	{ 	// Gizmo
+	if guizmo_is_enabled { 	// Gizmo
 		transform, err := ecs.get_component(
 			&entities_world,
 			scene_panel.selected_entity,
