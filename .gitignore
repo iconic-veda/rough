@@ -48,3 +48,16 @@
 
 !assets/models/vampire
 !assets/models/vampire/**
+
+!report/
+
+!report/assets/
+!report/assets/images/
+!report/assets/images/*
+
+!report/chapters/
+!report/chapters/*.typ
+
+!report/*.typ
+!report/*.typ
+!report/works.bib
