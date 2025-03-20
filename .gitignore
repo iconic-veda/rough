@@ -2,6 +2,7 @@
 
 !Justfile
 !.gitignore
+!.gitattributes
 !README.md
 
 !.vscode/
