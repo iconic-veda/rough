@@ -54,7 +54,8 @@ No acknowledgement is required.
 
 #pagebreak()
 
-#abstract
+// NOTE: Do we need an abstract?
+// #abstract
 
 #pagebreak()
 
