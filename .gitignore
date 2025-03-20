@@ -28,10 +28,6 @@
 !shaders/
 !shaders/*.glsl
 
-!assets/
-!assets/*
-!assets/textures/.gitkeep
-
 !freya_kanban
 
 !build.sh
@@ -41,15 +37,11 @@
 !build/libs
 !build/libs/*
 
-!assets/
-!assets/models
-!assets/models/backpack
-!assets/models/backpack/**
-
-!assets/models/vampire
-!assets/models/vampire/**
-
 !report/
+
+!assets/
+!assets/*
+!assets/**
 
 !report/assets/
 !report/assets/images/
