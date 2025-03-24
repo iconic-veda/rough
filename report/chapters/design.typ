@@ -54,14 +54,48 @@ What challenges did you anticipate or encounter with OpenGL, and how were they a
 Discuss any difficulties during implementation and how your team resolved them.
 
 == ECS architecture
-What is ECS architecture, and why did you adopt it?
-Provide an overview of ECS and explain why it was chosen as the architectural pattern.
+Entity Component System (ECS) is an architectural design pattern predominantly used in video game development.It represents a departure from traditional event-based approaches commonly provided by default in most engines.
+The core strength of ECS lies in its ability to facilitate code reusability through the separation of data from behavior.
+This architecture adheres to the "composition over inheritance principle," which enhances flexibility and helps developers more effectively identify and classify objects (entities) within a game scene.
 
-How does ECS benefit your project design?
-Detail the advantages ECS brings to managing complexity, scalability, or performance.
+=== The Design pattern
+The ECS implementation is founded on the three core components that define this architecture:
+#figure(
+  image("../assets/images/ECSBlockDiagram.png", width: 80%),
+  caption: [
+    Simple ECS Block Diagram
+  ],
+)
+- #strong("Entity"): 
+    An entity represents a general-purpose object, essentially serving as a container for components.
+    Typically, entities consist solely of a unique identifier, commonly implemented as a plain integer.
+    In our system, ... // Strings??
+- #strong("Component"): 
+    Components characterize entities by providing specific attributes or capabilities.
+    These are reusable data modules attached to entities that define behavior, functionality, and appearance.
+    For example, a "shininess" component might define how an entity reflects light in the rendering system.
+- #strong("System"): 
+    Systems represent the processing logic that operates on entities possessing specific components.
+    They decouple game logic from data, essentially functioning as specialized pipelines for processing particular combinations of components.
+    For instance, a physics system would query for entities having mass, velocity, and position components, then perform physics calculations on that set of components for each qualifying entity.
+The architecture allows for dynamic modification of an entity's behavior at runtime through systems that add, remove, or modify components.
+This approach eliminates the ambiguity problems often encountered in deep and wide inheritance hierarchies typical of Object-Oriented Programming.
+Furthermore, data for all instances of a component are stored contiguously in physical memory, enabling efficient memory access for systems that operate across numerous entities.
 
-How is ECS implemented in your system?
-Describe the specific components, entities, and systems in your ECS setup.
+=== Benefits
+The adoption of ECS architecture brings significant advantages to our project.
+Primarily, it is expected to deliver enhanced performance due to its data-oriented design principles.
+While implementing ECS initially presents greater complexity compared to traditional event-based approaches, the long-term benefits justify this investment.
+The architecture provides improved scalability and more efficient management of complex systems as the project grows.
+It's worth noting that the initial learning curve and implementation complexity of ECS is higher than with conventional patterns.
+However, this upfront investment pays dividends through superior performance characteristics and maintainability as the system scales.
 
-What are the implications of ECS on development workflow and collaboration?
-Discuss how ECS influences code organization, debugging, and team collaboration.
+// ref
+// https://www.simplilearn.com/entity-component-system-introductory-guide-article
+// https://habr.com/en/articles/651921/
+// https://www.reddit.com/r/gamedev/comments/18od4yw/what_are_your_thoughts_on_entity_component/
+// https://www.simplilearn.com/entity-component-system-introductory-guide-article
+// https://en.wikipedia.org/wiki/Entity_component_system
+// Maybe read for later: 
+// https://www.richardlord.net/blog/ecs/what-is-an-entity-framework
+
