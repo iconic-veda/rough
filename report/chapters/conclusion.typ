@@ -1,5 +1,11 @@
 = Conclusion
 
 #lorem(250)
-@vinson2001sandwich // TODO: remove this bibliography reference
+@simplilearn2025ecs
+@habr2025ecs
+
+@reddit2025ecs
+
+@wikipedia2025ecs
+@lord2025ecs
 #lorem(250)

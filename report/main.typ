@@ -31,7 +31,7 @@
 
             #v(7em)
             #strong[Author(s)] \
-            #emph[Cosimo Giraldi, Daniela Viktoria Eberhard]// TODO: Add your names here
+            #emph[Cosimo Giraldi, Daniela Viktoria Eberhard, Veda Gupta]// TODO: Add your names here
 
             #v(25em)
             #strong[Supervisor(s)] \
