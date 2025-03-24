@@ -1,5 +1,6 @@
 #import "chapters/abstract.typ"
 #import "chapters/introduction.typ"
+#import "chapters/requirements.typ"
 #import "chapters/design.typ"
 #import "chapters/implementation.typ"
 #import "chapters/results.typ"
@@ -74,6 +75,8 @@ No acknowledgement is required.
 #set heading(numbering: "1.")
 
 #introduction
+
+#requirements
 
 #design
 
